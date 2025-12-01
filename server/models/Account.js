@@ -52,15 +52,14 @@ AccountSchema.path('heroes').validate(function(heroes) {
 }, 'Maximum of 5 heroes allowed per account');
 
 // Hash password before saving
-AccountSchema.pre('save', async function(next) {
+AccountSchema.pre('save', async function() {
   // Only hash if password was modified
   if (!this.isModified('password')) {
-    return next();
+    return;
   }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Method to compare passwords
