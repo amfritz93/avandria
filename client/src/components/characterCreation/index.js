@@ -10,3 +10,4 @@ export { default as GenderSelection } from './GenderSelection';
 export { default as NameInput } from './NameInput';
 export { default as SkillTreeOverview } from './SkillTreeOverview';
 export { default as CreationSummary } from './CreationSummary';
+export { default as AbilityTooltip } from './AbilityTooltip';

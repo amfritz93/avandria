@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getCallingSkillTree } from '../../services/skillTreeService';
+import AbilityTooltip from './AbilityTooltip';
 
 const BRANCH_INFO = {
   power: {
@@ -7,6 +8,8 @@ const BRANCH_INFO = {
     color: 'text-red-400',
     bgColor: 'bg-red-400',
     borderColor: 'border-red-400',
+    hoverBg: 'hover:bg-red-400/20',
+    selectedBg: 'bg-red-400/10',
     description: 'Physical offense',
     basicAbility: 'Strike'
   },
@@ -15,6 +18,8 @@ const BRANCH_INFO = {
     color: 'text-orange-400',
     bgColor: 'bg-orange-400',
     borderColor: 'border-orange-400',
+    hoverBg: 'hover:bg-orange-400/20',
+    selectedBg: 'bg-orange-400/10',
     description: 'Physical defense',
     basicAbility: 'Guard'
   },
@@ -23,6 +28,8 @@ const BRANCH_INFO = {
     color: 'text-blue-400',
     bgColor: 'bg-blue-400',
     borderColor: 'border-blue-400',
+    hoverBg: 'hover:bg-blue-400/20',
+    selectedBg: 'bg-blue-400/10',
     description: 'Magical offense',
     basicAbility: 'Spark'
   },
@@ -31,6 +38,8 @@ const BRANCH_INFO = {
     color: 'text-purple-400',
     bgColor: 'bg-purple-400',
     borderColor: 'border-purple-400',
+    hoverBg: 'hover:bg-purple-400/20',
+    selectedBg: 'bg-purple-400/10',
     description: 'Magical defense',
     basicAbility: 'Fortify'
   },
@@ -39,6 +48,8 @@ const BRANCH_INFO = {
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-400',
     borderColor: 'border-yellow-400',
+    hoverBg: 'hover:bg-yellow-400/20',
+    selectedBg: 'bg-yellow-400/10',
     description: 'Precision',
     basicAbility: 'Focus'
   },
@@ -47,6 +58,8 @@ const BRANCH_INFO = {
     color: 'text-green-400',
     bgColor: 'bg-green-400',
     borderColor: 'border-green-400',
+    hoverBg: 'hover:bg-green-400/20',
+    selectedBg: 'bg-green-400/10',
     description: 'Evasion',
     basicAbility: 'Evade'
   }
@@ -74,6 +87,13 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
 
     fetchTree();
   }, [calling]);
+
+  // Auto-expand selected branch
+  useEffect(() => {
+    if (selectedBranch) {
+      setExpandedBranch(selectedBranch);
+    }
+  }, [selectedBranch]);
 
   if (loading) {
     return (
@@ -104,6 +124,9 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
           You have <span className="text-primary font-bold">1 Skill Point</span> to spend.
           Select a branch to unlock your first Stage 2 ability.
         </p>
+        <p className="text-text-secondary text-xs mt-1">
+          Hover over abilities to see their effects
+        </p>
       </div>
 
       {/* Skill Tree Grid */}
@@ -113,16 +136,15 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
           const info = BRANCH_INFO[branch];
           const isSelected = selectedBranch === branch;
           const isExpanded = expandedBranch === branch;
-          const stage2Ability = branchData.stages[2];
 
           return (
             <div
               key={branch}
               className={`
-                rounded-lg border-2 transition-all cursor-pointer
+                rounded-lg border-2 transition-all cursor-pointer overflow-hidden
                 ${isSelected
-                  ? `${info.borderColor} bg-${branch === 'power' ? 'red' : branch === 'toughness' ? 'orange' : branch === 'brilliance' ? 'blue' : branch === 'spirit' ? 'purple' : branch === 'acuity' ? 'yellow' : 'green'}-400/10`
-                  : 'border-surface bg-background hover:border-primary/50'
+                  ? `${info.borderColor} ${info.selectedBg}`
+                  : `border-surface bg-background ${info.hoverBg}`
                 }
               `}
               onClick={() => onSelectBranch(branch)}
@@ -137,84 +159,133 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
                 </div>
                 <p className="text-xs text-text-secondary mb-3">{branchData.description}</p>
 
-                {/* Stage Progression Visual */}
-                <div className="flex items-center space-x-1 mb-3">
-                  {[1, 2, 3, 4, 5, 6].map((stage) => (
-                    <div
-                      key={stage}
-                      className={`
-                        w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                        ${stage === 1
-                          ? `${info.bgColor} text-white`
-                          : stage === 2 && isSelected
-                            ? `${info.bgColor} text-white`
-                            : 'bg-surface text-text-secondary'
-                        }
-                      `}
-                      title={`Stage ${stage}${stage === 1 ? ' (Unlocked)' : stage === 2 && isSelected ? ' (Will Unlock)' : ''}`}
-                    >
-                      {stage}
-                    </div>
-                  ))}
+                {/* Visual Skill Tree - WoW Style Nodes */}
+                <div className="relative py-2">
+                  {/* Connection Line */}
+                  <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-surface -translate-y-1/2" />
+
+                  {/* Stage Nodes */}
+                  <div className="relative flex items-center justify-between">
+                    {[1, 2, 3, 4, 5, 6].map((stage) => {
+                      const ability = branchData.stages[stage];
+                      const isUnlocked = stage === 1 || (stage === 2 && isSelected);
+                      const willUnlock = stage === 2 && isSelected;
+
+                      return (
+                        <AbilityTooltip
+                          key={stage}
+                          ability={ability}
+                          stage={stage}
+                          isUnlocked={isUnlocked}
+                          branchColor={info.color}
+                        >
+                          <div
+                            className={`
+                              relative w-8 h-8 rounded-full flex items-center justify-center
+                              text-xs font-bold border-2 transition-all
+                              ${isUnlocked
+                                ? `${info.bgColor} text-white border-white/30 shadow-lg`
+                                : willUnlock
+                                  ? `${info.bgColor}/50 text-white border-white/20`
+                                  : 'bg-gray-700 text-gray-400 border-gray-600'
+                              }
+                            `}
+                          >
+                            {stage}
+                            {/* Glow effect for unlocked */}
+                            {isUnlocked && (
+                              <div className={`absolute inset-0 rounded-full ${info.bgColor} opacity-30 animate-pulse`} />
+                            )}
+                          </div>
+                        </AbilityTooltip>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Current & Next Ability */}
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <span className={`w-2 h-2 rounded-full ${info.bgColor}`}></span>
-                    <span className="text-text-secondary">Stage 1:</span>
-                    <span className="text-text-primary">{info.basicAbility}</span>
-                    <span className="text-success text-xs">(Unlocked)</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`w-2 h-2 rounded-full ${isSelected ? info.bgColor : 'bg-surface'}`}></span>
-                    <span className="text-text-secondary">Stage 2:</span>
-                    <span className={isSelected ? 'text-text-primary' : 'text-text-secondary'}>
-                      {stage2Ability.name}
-                    </span>
-                    <span className={`text-xs ${isSelected ? 'text-primary' : 'text-text-secondary'}`}>
-                      (1 SP)
-                    </span>
-                  </div>
-                </div>
-
-                {/* Expand to see more */}
+                {/* Expand/Collapse Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setExpandedBranch(isExpanded ? null : branch);
                   }}
-                  className="text-xs text-primary hover:text-primary/80 mt-2"
+                  className="w-full text-xs text-primary hover:text-primary/80 mt-3 py-1 border-t border-surface"
                 >
-                  {isExpanded ? 'Show less' : 'Show all abilities'}
+                  {isExpanded ? '▲ Hide Details' : '▼ Show All Abilities'}
                 </button>
               </div>
 
-              {/* Expanded View */}
+              {/* Expanded Ability List */}
               {isExpanded && (
-                <div className="border-t border-surface p-4 bg-surface/50">
-                  <h5 className="text-xs font-semibold text-text-secondary mb-2">All Stages:</h5>
-                  <div className="space-y-1">
+                <div className="border-t-2 border-surface bg-background/50 p-4">
+                  <div className="space-y-2">
                     {[1, 2, 3, 4, 5, 6].map((stage) => {
                       const ability = branchData.stages[stage];
                       const isUnlocked = stage === 1 || (stage === 2 && isSelected);
+                      const spCost = SP_COSTS[stage];
+
                       return (
-                        <div key={stage} className="flex items-center text-xs">
-                          <span className={`w-4 ${isUnlocked ? info.color : 'text-text-secondary'}`}>
-                            {stage}.
-                          </span>
-                          <span className={isUnlocked ? 'text-text-primary' : 'text-text-secondary'}>
-                            {ability.name}
-                          </span>
-                          <span className="text-text-secondary/50 ml-1">
-                            ({ability.type})
-                          </span>
-                          {stage > 1 && (
-                            <span className="text-text-secondary/50 ml-auto">
-                              {SP_COSTS[stage]} SP
-                            </span>
-                          )}
-                        </div>
+                        <AbilityTooltip
+                          key={stage}
+                          ability={ability}
+                          stage={stage}
+                          isUnlocked={isUnlocked}
+                          branchColor={info.color}
+                        >
+                          <div
+                            className={`
+                              flex items-center p-2 rounded-lg transition-all
+                              ${isUnlocked
+                                ? 'bg-surface/80'
+                                : 'bg-surface/30 opacity-60 hover:opacity-100'
+                              }
+                            `}
+                          >
+                            {/* Stage Number */}
+                            <div
+                              className={`
+                                w-6 h-6 rounded-full flex items-center justify-center
+                                text-xs font-bold mr-3 flex-shrink-0
+                                ${isUnlocked
+                                  ? `${info.bgColor} text-white`
+                                  : 'bg-gray-600 text-gray-400'
+                                }
+                              `}
+                            >
+                              {stage}
+                            </div>
+
+                            {/* Ability Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium text-sm ${isUnlocked ? 'text-text-primary' : 'text-text-secondary'}`}>
+                                  {ability.name}
+                                </span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                  ability.type === 'active'
+                                    ? 'bg-yellow-400/20 text-yellow-400'
+                                    : 'bg-blue-400/20 text-blue-400'
+                                }`}>
+                                  {ability.type}
+                                </span>
+                              </div>
+                              <p className="text-xs text-text-secondary truncate mt-0.5">
+                                {ability.description}
+                              </p>
+                            </div>
+
+                            {/* SP Cost / Status */}
+                            <div className="flex-shrink-0 ml-2 text-right">
+                              {stage === 1 ? (
+                                <span className="text-xs text-green-400">✓</span>
+                              ) : isUnlocked ? (
+                                <span className="text-xs text-green-400">✓</span>
+                              ) : (
+                                <span className="text-xs text-text-secondary">{spCost} SP</span>
+                              )}
+                            </div>
+                          </div>
+                        </AbilityTooltip>
                       );
                     })}
                   </div>
@@ -227,17 +298,19 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
 
       {/* Selection Confirmation */}
       {selectedBranch && skillTree[selectedBranch] && (
-        <div className="bg-background rounded-lg p-4 text-center">
-          <p className="text-text-secondary mb-2">You will unlock:</p>
-          <div className={`text-xl font-bold ${BRANCH_INFO[selectedBranch].color}`}>
-            {skillTree[selectedBranch].stages[2].name}
+        <div className="bg-surface rounded-lg p-4 border border-primary/30">
+          <div className="text-center">
+            <p className="text-text-secondary text-sm mb-2">You will unlock:</p>
+            <div className={`text-xl font-bold ${BRANCH_INFO[selectedBranch].color}`}>
+              {skillTree[selectedBranch].stages[2].name}
+            </div>
+            <p className="text-sm text-text-secondary mt-2 max-w-md mx-auto">
+              {skillTree[selectedBranch].stages[2].description}
+            </p>
+            <p className="text-xs text-text-secondary mt-2">
+              From {skillTree[selectedBranch].pathName}
+            </p>
           </div>
-          <p className="text-sm text-text-secondary mt-1">
-            {skillTree[selectedBranch].stages[2].description}
-          </p>
-          <p className="text-xs text-text-secondary mt-2">
-            From {skillTree[selectedBranch].pathName}
-          </p>
         </div>
       )}
 
@@ -247,8 +320,8 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
         <ul className="text-xs text-text-secondary space-y-1">
           <li>• Each calling has 6 branches, one for each stat</li>
           <li>• Each branch has 6 stages with unique abilities</li>
+          <li>• <span className="text-yellow-400">Active</span> abilities are used in combat, <span className="text-blue-400">Passive</span> abilities are always active</li>
           <li>• You earn more Skill Points as you level up</li>
-          <li>• Visit Trainers in the world to spend additional SP</li>
           <li>• By level 20, you can max 2 branches to Stage 6</li>
         </ul>
       </div>
