@@ -98,6 +98,7 @@ const Dashboard = () => {
             {/* Create New Hero Card */}
             {(!account?.heroes || account.heroes.length < 5) && (
               <button
+                onClick={() => navigate('/create-hero')}
                 className="p-8 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors hover:border-solid"
                 style={{
                   borderColor: 'var(--color-border)',
