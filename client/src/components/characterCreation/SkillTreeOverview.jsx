@@ -70,7 +70,6 @@ const SP_COSTS = [0, 0, 1, 2, 3, 4, 5]; // Index = stage
 const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranch }) => {
   const [skillTree, setSkillTree] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [expandedBranch, setExpandedBranch] = useState(null);
 
   useEffect(() => {
     const fetchTree = async () => {
@@ -88,12 +87,16 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
     fetchTree();
   }, [calling]);
 
-  // Auto-expand selected branch
-  useEffect(() => {
-    if (selectedBranch) {
-      setExpandedBranch(selectedBranch);
+  // Handle branch click - toggles both selection and expansion
+  const handleBranchClick = (branch) => {
+    if (selectedBranch === branch) {
+      // Clicking selected branch deselects it
+      onSelectBranch(null);
+    } else {
+      // Clicking new branch selects it
+      onSelectBranch(branch);
     }
-  }, [selectedBranch]);
+  };
 
   if (loading) {
     return (
@@ -135,7 +138,6 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
           const branchData = skillTree[branch];
           const info = BRANCH_INFO[branch];
           const isSelected = selectedBranch === branch;
-          const isExpanded = expandedBranch === branch;
 
           return (
             <div
@@ -147,7 +149,7 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
                   : `border-surface bg-background ${info.hoverBg}`
                 }
               `}
-              onClick={() => onSelectBranch(branch)}
+              onClick={() => handleBranchClick(branch)}
             >
               {/* Branch Header */}
               <div className="p-4">
@@ -203,20 +205,10 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
                   </div>
                 </div>
 
-                {/* Expand/Collapse Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpandedBranch(isExpanded ? null : branch);
-                  }}
-                  className="w-full text-xs text-primary hover:text-primary/80 mt-3 py-1 border-t border-surface"
-                >
-                  {isExpanded ? '▲ Hide Details' : '▼ Show All Abilities'}
-                </button>
               </div>
 
-              {/* Expanded Ability List */}
-              {isExpanded && (
+              {/* Expanded Ability List - shows when selected */}
+              {isSelected && (
                 <div className="border-t-2 border-surface bg-background/50 p-4">
                   <div className="space-y-2">
                     {[1, 2, 3, 4, 5, 6].map((stage) => {
@@ -256,22 +248,17 @@ const SkillTreeOverview = ({ calling, callingData, selectedBranch, onSelectBranc
                             </div>
 
                             {/* Ability Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className={`font-medium text-sm ${isUnlocked ? 'text-text-primary' : 'text-text-secondary'}`}>
-                                  {ability.name}
-                                </span>
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                  ability.type === 'active'
-                                    ? 'bg-yellow-400/20 text-yellow-400'
-                                    : 'bg-blue-400/20 text-blue-400'
-                                }`}>
-                                  {ability.type}
-                                </span>
-                              </div>
-                              <p className="text-xs text-text-secondary truncate mt-0.5">
-                                {ability.description}
-                              </p>
+                            <div className="flex-1 min-w-0 flex items-center gap-2">
+                              <span className={`font-medium text-sm ${isUnlocked ? 'text-text-primary' : 'text-text-secondary'}`}>
+                                {ability.name}
+                              </span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                ability.type === 'active'
+                                  ? 'bg-yellow-400/20 text-yellow-400'
+                                  : 'bg-blue-400/20 text-blue-400'
+                              }`}>
+                                {ability.type}
+                              </span>
                             </div>
 
                             {/* SP Cost / Status */}
