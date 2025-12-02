@@ -39,6 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/game', require('./routes/gameData'));
 app.use('/api/heroes', require('./routes/heroes'));
+app.use('/api/skills', require('./routes/skills'));
 
 // Health check route
 app.get('/api/health', (req, res) => {
