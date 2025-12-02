@@ -4,21 +4,38 @@ A browser-based text RPG featuring 12 unique species, 8 callings with skill tree
 
 ## Features
 
-### Current (Iteration 1)
+### Current (Iterations 1-2)
+
+**Account System**
 - User account registration and authentication (JWT-based)
 - Theme toggle (light/dark mode) with persistent preferences
 - Responsive landing page with login/register modals
-- User dashboard
-- RESTful API with Express.js
-- MongoDB database integration
+
+**Hero Creation**
+- 12 unique species (Human, Elf, Dwarf, Gnome, Orc, Goliath, Tiefling, Goblin, Aarakocra, Vulpine, Sylvan, Sprite)
+- 8 callings/classes (Warrior, Paladin, Hunter, Rogue, Mage, Priest, Bard, Druid)
+- 4 gender identity options with icons
+- 6-step character creation wizard
+- Combined stat preview (species base + calling modifiers)
+- Starting equipment based on calling specializations
+
+**Skill Tree System**
+- 6 skill branches per calling (Power, Toughness, Brilliance, Spirit, Acuity, Instinct)
+- 6 stages per branch with unique abilities
+- 288 total abilities across all callings
+- Initial skill point spending during creation
+
+**Dashboard**
+- Hero selection with detailed hero cards
+- Up to 5 heroes per account
+- Delete hero with confirmation
+- Hero stats display (level, location, last played)
 
 ### Planned
-- Character creation with 12 species and 8 callings
 - Turn-based combat system with tactical depth
-- Skill trees and ability progression
 - 10 explorable regions with 150+ monsters
 - Equipment and inventory management
-- Save system with multiple hero slots
+- Save system with auto-save
 
 ## Installation
 
@@ -78,19 +95,24 @@ The client runs on `http://localhost:5173` and the API server on `http://localho
 avandria/
 ├── client/                 # React frontend (Vite)
 │   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Page components
-│   │   ├── services/       # API service layer
-│   │   ├── store/          # Redux state management
-│   │   └── App.jsx         # Main app component
+│   │   ├── components/
+│   │   │   ├── auth/           # Login/Register modals
+│   │   │   ├── characterCreation/  # 6-step wizard components
+│   │   │   ├── common/         # ThemeToggle, shared UI
+│   │   │   └── dashboard/      # HeroCard, dashboard UI
+│   │   ├── pages/              # LandingPage, Dashboard, CharacterCreation
+│   │   ├── services/           # API service layer (hero, gameData, skillTree)
+│   │   ├── store/              # Redux slices (auth, theme, hero)
+│   │   └── App.jsx
 │   └── vite.config.js
 ├── server/                 # Express backend
 │   ├── config/             # Database configuration
-│   ├── controllers/        # Route controllers
+│   ├── controllers/        # heroController, skillTreeController, etc.
+│   ├── data/               # Game data (species, callings, items, skillTrees)
 │   ├── middleware/         # Auth & error handling
-│   ├── models/             # Mongoose schemas
-│   ├── routes/             # API routes
-│   └── server.js           # Entry point
+│   ├── models/             # Account, Hero, Item schemas
+│   ├── routes/             # API routes (auth, heroes, game, skills)
+│   └── server.js
 └── package.json            # Root workspace scripts
 ```
 
@@ -127,6 +149,30 @@ avandria/
 | POST | `/api/auth/logout` | Logout current session |
 | GET | `/api/auth/me` | Get current user |
 | PUT | `/api/auth/settings` | Update user settings |
+
+### Heroes
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/heroes` | Get all heroes for account |
+| POST | `/api/heroes` | Create a new hero |
+| GET | `/api/heroes/:id` | Get hero details |
+| PUT | `/api/heroes/:id` | Update hero (save game) |
+| DELETE | `/api/heroes/:id` | Delete a hero |
+| GET | `/api/heroes/:id/stats` | Get calculated stats |
+
+### Game Data
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/game/species` | Get all species |
+| GET | `/api/game/callings` | Get all callings |
+| GET | `/api/game/items` | Get all items |
+
+### Skills
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/skills/tree/:calling` | Get skill tree for calling |
+| GET | `/api/skills/ability/:calling/:branch/:stage` | Get specific ability |
+| POST | `/api/skills/spend` | Spend skill points |
 
 ## Contributing
 
