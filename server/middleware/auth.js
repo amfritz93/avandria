@@ -37,6 +37,8 @@ const protect = async (req, res, next) => {
 
     // Attach account to request object
     req.account = account;
+    // Also attach user with id for compatibility with controllers
+    req.user = { id: account._id.toString() };
     next();
   } catch (error) {
     return res.status(401).json({
