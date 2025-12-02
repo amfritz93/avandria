@@ -1,21 +1,51 @@
+import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { logout } from '../store/authSlice';
+import {
+  fetchHeroes,
+  deleteHero,
+  selectHeroes,
+  selectHeroesLoading,
+  selectIsDeleting
+} from '../store/heroSlice';
 import ThemeToggle from '../components/common/ThemeToggle';
+import { HeroCard } from '../components/dashboard';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, account } = useSelector((state) => state.auth);
 
+  // Hero state from Redux
+  const heroes = useSelector(selectHeroes);
+  const heroesLoading = useSelector(selectHeroesLoading);
+  const isDeleting = useSelector(selectIsDeleting);
+
   // Redirect to landing if not logged in
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
+  // Fetch heroes on mount
+  useEffect(() => {
+    dispatch(fetchHeroes());
+  }, [dispatch]);
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
+  };
+
+  const handlePlayHero = (heroId) => {
+    // TODO: Navigate to game view with selected hero
+    // For now, just log the selection
+    console.log('Playing hero:', heroId);
+    // Future: navigate(`/game/${heroId}`);
+  };
+
+  const handleDeleteHero = (heroId) => {
+    dispatch(deleteHero(heroId));
   };
 
   return (
@@ -69,50 +99,72 @@ const Dashboard = () => {
           className="rounded-lg p-6 mb-8"
           style={{ backgroundColor: 'var(--color-bg-secondary)' }}
         >
-          <h3
-            className="text-xl font-semibold mb-6"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Your Heroes
-          </h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3
+              className="text-xl font-semibold"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Your Heroes
+            </h3>
+            <span
+              className="text-sm"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              {heroes.length} / 5 slots
+            </span>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Placeholder Hero Cards */}
-            {account?.heroes?.length > 0 ? (
-              account.heroes.map((hero, index) => (
-                <div
-                  key={index}
-                  className="p-4 rounded-lg border"
+          {/* Loading State */}
+          {heroesLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          )}
+
+          {/* Heroes Grid */}
+          {!heroesLoading && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Hero Cards */}
+              {heroes.map((hero) => (
+                <HeroCard
+                  key={hero.id}
+                  hero={hero}
+                  onPlay={handlePlayHero}
+                  onDelete={handleDeleteHero}
+                  isDeleting={isDeleting}
+                />
+              ))}
+
+              {/* Create New Hero Card */}
+              {heroes.length < 5 && (
+                <button
+                  onClick={() => navigate('/create-hero')}
+                  className="p-8 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all hover:border-solid hover:border-primary/50 min-h-[200px]"
                   style={{
-                    backgroundColor: 'var(--color-bg-tertiary)',
-                    borderColor: 'var(--color-border)'
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-muted)'
                   }}
                 >
-                  <p style={{ color: 'var(--color-text-primary)' }}>
-                    Hero Slot {index + 1}
-                  </p>
-                </div>
-              ))
-            ) : null}
+                  <span className="text-4xl">+</span>
+                  <span>Create New Hero</span>
+                </button>
+              )}
 
-            {/* Create New Hero Card */}
-            {(!account?.heroes || account.heroes.length < 5) && (
-              <button
-                onClick={() => navigate('/create-hero')}
-                className="p-8 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors hover:border-solid"
-                style={{
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-muted)'
-                }}
-              >
-                <span className="text-4xl">+</span>
-                <span>Create New Hero</span>
-              </button>
-            )}
-          </div>
+              {/* Empty State */}
+              {heroes.length === 0 && !heroesLoading && (
+                <div
+                  className="col-span-full text-center py-8"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  <p className="mb-2">You don&apos;t have any heroes yet.</p>
+                  <p>Create your first hero to begin your adventure!</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Account Stats Placeholder */}
+        {/* Account Stats */}
         <div
           className="rounded-lg p-6"
           style={{ backgroundColor: 'var(--color-bg-secondary)' }}
@@ -135,9 +187,9 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-2xl font-bold" style={{ color: 'var(--color-accent)' }}>
-                {account?.heroes?.length || 0}
+                {heroes.length}
               </p>
-              <p className="text-sm">Characters Created</p>
+              <p className="text-sm">Heroes Created</p>
             </div>
             <div>
               <p className="text-2xl font-bold" style={{ color: 'var(--color-accent)' }}>
