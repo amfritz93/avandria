@@ -8,10 +8,15 @@ import api from './api';
 /**
  * Start combat at current location
  * @param {string} heroId - Hero's MongoDB ObjectId
+ * @param {string} monsterId - Optional specific monster ID to fight
  * @returns {Promise<Object>} Combat initiation result with monster data
  */
-export const startCombat = async (heroId) => {
-  const response = await api.post('/combat/start', { heroId });
+export const startCombat = async (heroId, monsterId = null) => {
+  const body = { heroId };
+  if (monsterId) {
+    body.monsterId = monsterId;
+  }
+  const response = await api.post('/combat/start', body);
   return response.data;
 };
 
