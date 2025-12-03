@@ -12,6 +12,7 @@ import {
   selectCombatRound,
   selectCombatLog,
   selectRewards,
+  selectLevelUp,
   selectIsAttacking,
   selectIsFleeing,
   selectIsStartingCombat,
@@ -40,6 +41,7 @@ const CombatTab = ({ monsters, hero, location }) => {
   const round = useSelector(selectCombatRound);
   const log = useSelector(selectCombatLog);
   const rewards = useSelector(selectRewards);
+  const levelUp = useSelector(selectLevelUp);
   const isAttacking = useSelector(selectIsAttacking);
   const isFleeing = useSelector(selectIsFleeing);
   const isStarting = useSelector(selectIsStartingCombat);
@@ -95,6 +97,7 @@ const CombatTab = ({ monsters, hero, location }) => {
       <VictoryScreen
         monster={combatMonster}
         rewards={rewards}
+        levelUp={levelUp}
         log={log}
         onContinue={handleContinue}
       />
@@ -416,7 +419,7 @@ const LogEntry = ({ entry }) => {
 /**
  * Victory Screen Component
  */
-const VictoryScreen = ({ monster, rewards, log, onContinue }) => (
+const VictoryScreen = ({ monster, rewards, levelUp, log, onContinue }) => (
   <div className="space-y-6">
     <div
       className="p-6 rounded-lg text-center"
@@ -435,6 +438,53 @@ const VictoryScreen = ({ monster, rewards, log, onContinue }) => (
         You have defeated {monster?.name}!
       </p>
     </div>
+
+    {/* Level Up Banner */}
+    {levelUp && (
+      <div
+        className="p-4 rounded-lg text-center animate-pulse"
+        style={{
+          backgroundColor: 'rgba(139, 92, 246, 0.15)',
+          border: '2px solid rgba(139, 92, 246, 0.5)'
+        }}
+      >
+        <h3
+          className="text-xl font-bold mb-2"
+          style={{ color: 'var(--color-xp)' }}
+        >
+          Level Up!
+        </h3>
+        <p
+          className="text-2xl font-bold mb-3"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Level {levelUp.previousLevel} → {levelUp.newLevel}
+        </p>
+        {/* Stat Gains */}
+        <div className="flex flex-wrap justify-center gap-3">
+          {Object.entries(levelUp.statGains).map(([stat, gain]) =>
+            gain > 0 && (
+              <span
+                key={stat}
+                className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+                style={{
+                  backgroundColor: 'var(--color-bg-tertiary)',
+                  color: 'var(--color-success)'
+                }}
+              >
+                {stat} +{gain}
+              </span>
+            )
+          )}
+        </div>
+        <p
+          className="text-xs mt-2"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          HP and MP fully restored!
+        </p>
+      </div>
+    )}
 
     {/* Rewards */}
     {rewards && (

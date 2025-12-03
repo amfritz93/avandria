@@ -106,6 +106,10 @@ const initialState = {
   rewards: null,
   worldProgress: null,
 
+  // Level up info (on victory)
+  levelUp: null,
+  xpProgress: null,
+
   // Loading states
   starting: false,
   startError: null,
@@ -176,7 +180,7 @@ const combatSlice = createSlice({
       })
       .addCase(executeAttack.fulfilled, (state, action) => {
         state.attacking = false;
-        const { combat, rewards, worldProgress } = action.payload;
+        const { combat, rewards, worldProgress, levelUp, xpProgress } = action.payload;
 
         state.combatStatus = combat.status;
         state.monster = combat.monster;
@@ -190,6 +194,8 @@ const combatSlice = createSlice({
           state.inCombat = false;
           state.rewards = rewards;
           state.worldProgress = worldProgress;
+          state.levelUp = levelUp || null;
+          state.xpProgress = xpProgress || null;
         } else if (combat.status === 'defeat') {
           state.inCombat = false;
         }
@@ -266,6 +272,8 @@ export const selectCombatRound = (state) => state.combat.round;
 export const selectCombatLog = (state) => state.combat.log;
 export const selectRewards = (state) => state.combat.rewards;
 export const selectWorldProgress = (state) => state.combat.worldProgress;
+export const selectLevelUp = (state) => state.combat.levelUp;
+export const selectXPProgress = (state) => state.combat.xpProgress;
 export const selectIsAttacking = (state) => state.combat.attacking;
 export const selectIsFleeing = (state) => state.combat.fleeing;
 export const selectIsStartingCombat = (state) => state.combat.starting;
