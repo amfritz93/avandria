@@ -9,6 +9,9 @@ const verdantWilds = require('../data/locations/verdantWilds');
 // Import monster data for seeding/lookup
 const monsterData = require('../data/monsters');
 
+// Import ability data
+const { getAbility, getHeroAbilities } = require('../data/abilities');
+
 /**
  * Combat State Storage (in-memory for now)
  * In production, this would be stored in Redis or similar
@@ -229,13 +232,14 @@ const checkLevelUp = (hero) => {
     // Each level grants +1 to primary stat and +1 to a secondary stat
     const statGains = getStatGainsForLevel(hero);
     for (const [stat, gain] of Object.entries(statGains)) {
-      hero.stats[stat] += gain;
+      // Add level bonuses to the levelBonuses sub-object
+      hero.stats.levelBonuses[stat] = (hero.stats.levelBonuses[stat] || 0) + gain;
       totalStatGains[stat] += gain;
     }
 
-    // Increase HP/MP caps and restore to full
-    hero.currentHP = hero.stats.toughness * 5;
-    hero.currentMP = hero.stats.spirit * 5;
+    // Restore HP/MP to full using the virtual max values
+    hero.currentHP = hero.maxHP;
+    hero.currentMP = hero.maxMP;
 
     // Max level cap (for now)
     if (hero.level >= 20) break;
@@ -258,16 +262,16 @@ const getStatGainsForLevel = (hero) => {
   const level = hero.level;
   const gains = {};
 
-  // Primary stat based on calling
+  // Primary stat based on calling (matches callings.js)
   const callingPrimary = {
     warrior: 'power',
-    guardian: 'toughness',
-    assassin: 'acuity',
-    ranger: 'instinct',
+    paladin: 'toughness',
+    hunter: 'acuity',
+    rogue: 'instinct',
     mage: 'brilliance',
-    cleric: 'spirit',
-    warlock: 'brilliance',
-    monk: 'spirit'
+    priest: 'spirit',
+    bard: 'spirit',
+    druid: 'brilliance'
   };
 
   // Secondary stat rotation
@@ -423,6 +427,9 @@ const startCombat = async (req, res, next) => {
       round: 0
     });
 
+    // Get hero's available abilities from skill tree
+    const heroAbilities = getHeroAbilities(hero.skillTree);
+
     res.json({
       success: true,
       message: `Combat started with ${monster.name}`,
@@ -432,6 +439,10 @@ const startCombat = async (req, res, next) => {
           heroHP: combatState.hero.currentHP,
           heroMP: combatState.hero.currentMP,
           heroStamina: combatState.hero.currentStamina,
+          heroMaxHP: hero.maxHP,
+          heroMaxMP: hero.maxMP,
+          heroMaxStamina: hero.maxStamina,
+          abilities: heroAbilities,
           round: combatState.round,
           log: combatState.log
         }
@@ -484,61 +495,135 @@ const heroAttack = async (req, res, next) => {
     combat.round++;
     const roundLog = [];
 
-    // Get hero effective stats
-    const heroStats = {
-      power: hero.stats.power,
-      toughness: hero.stats.toughness,
-      brilliance: hero.stats.brilliance,
-      spirit: hero.stats.spirit,
-      acuity: hero.stats.acuity,
-      instinct: hero.stats.instinct
-    };
+    // Get hero effective stats (sum of base + callingMods + levelBonuses + skillTreeBonuses)
+    const heroStats = hero.effectiveStats;
 
-    // Default damage type is slashing (can be modified by equipped weapon)
-    let heroDamageType = 'slashing';
-    let damageMultiplier = 1.0;
+    // Get ability if specified
+    const ability = abilityId ? getAbility(abilityId) : null;
 
-    // Check for weakness/resistance
-    if (combat.monster.weaknesses.includes(heroDamageType)) {
-      damageMultiplier = 1.5;
-    } else if (combat.monster.resistance === heroDamageType) {
-      damageMultiplier = 0.5;
-    } else if (combat.monster.immunity === heroDamageType) {
-      damageMultiplier = 0;
+    // Validate ability costs
+    if (ability) {
+      if (ability.mpCost > 0 && combat.hero.currentMP < ability.mpCost) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough MP to use ${ability.name}. Need ${ability.mpCost}, have ${combat.hero.currentMP}.`
+        });
+      }
+      if (ability.staminaCost > 0 && combat.hero.currentStamina < ability.staminaCost) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough Stamina to use ${ability.name}. Need ${ability.staminaCost}, have ${combat.hero.currentStamina}.`
+        });
+      }
+
+      // Deduct costs
+      combat.hero.currentMP -= ability.mpCost;
+      combat.hero.currentStamina -= ability.staminaCost;
     }
 
-    // Hero attack
-    const heroHits = checkHit(heroStats, combat.monster.stats);
+    // Determine damage type and multipliers based on ability or basic attack
+    let heroDamageType = ability?.damageType || 'slashing';
+    let abilityDamageMultiplier = ability?.damageMultiplier || 1.0;
+    let hitModifier = ability?.hitModifier || 0;
+    let critModifier = ability?.critModifier || 0;
+    let isDefending = false;
+    let dodgeChance = 0;
+
+    // Handle special ability effects
+    if (ability) {
+      if (ability.effect === 'defend') {
+        isDefending = true;
+        combat.hero.isDefending = true;
+        roundLog.push({
+          type: 'hero_defend',
+          ability: ability.name,
+          message: `You take a defensive stance with ${ability.name}!`
+        });
+      } else if (ability.effect === 'heal') {
+        const healAmount = Math.floor(heroStats[ability.statUsed] * ability.healMultiplier);
+        const maxHP = hero.maxHP;
+        const actualHeal = Math.min(healAmount, maxHP - combat.hero.currentHP);
+        combat.hero.currentHP = Math.min(maxHP, combat.hero.currentHP + actualHeal);
+        roundLog.push({
+          type: 'hero_heal',
+          ability: ability.name,
+          heal: actualHeal,
+          message: `You use ${ability.name} and restore ${actualHeal} HP!`,
+          heroHP: combat.hero.currentHP
+        });
+      } else if (ability.effect === 'counter') {
+        dodgeChance = ability.dodgeChance || 0;
+      }
+    }
+
+    // Calculate weakness/resistance multiplier
+    let weaknessMultiplier = 1.0;
+    if (heroDamageType && combat.monster.weaknesses?.includes(heroDamageType)) {
+      weaknessMultiplier = 1.5;
+    } else if (heroDamageType && combat.monster.resistance === heroDamageType) {
+      weaknessMultiplier = 0.5;
+    } else if (heroDamageType && combat.monster.immunity === heroDamageType) {
+      weaknessMultiplier = 0;
+    }
+
+    const totalDamageMultiplier = abilityDamageMultiplier * weaknessMultiplier;
+
+    // Hero attack (if ability deals damage)
     let heroDamage = 0;
     let heroCrit = false;
 
-    if (heroHits) {
-      heroCrit = checkCrit(heroStats);
-      heroDamage = calculateDamage(heroStats, combat.monster.stats, heroDamageType, damageMultiplier);
-      if (heroCrit) {
-        heroDamage = Math.floor(heroDamage * 1.5);
-      }
-      combat.monster.currentHP = Math.max(0, combat.monster.currentHP - heroDamage);
+    if (!ability || ability.effect === 'damage' || ability.effect === 'counter') {
+      // Calculate hit chance with modifiers
+      const modifiedHeroStats = {
+        ...heroStats,
+        acuity: heroStats.acuity + Math.floor(hitModifier / 2)
+      };
 
-      roundLog.push({
-        type: 'hero_attack',
-        hit: true,
-        crit: heroCrit,
-        damage: heroDamage,
-        damageType: heroDamageType,
-        multiplier: damageMultiplier,
-        message: heroCrit
-          ? `Critical hit! You deal ${heroDamage} damage to ${combat.monster.name}!`
-          : `You strike ${combat.monster.name} for ${heroDamage} damage.`,
-        monsterHP: combat.monster.currentHP
-      });
-    } else {
-      roundLog.push({
-        type: 'hero_attack',
-        hit: false,
-        message: `Your attack misses ${combat.monster.name}!`,
-        monsterHP: combat.monster.currentHP
-      });
+      const heroHits = checkHit(modifiedHeroStats, combat.monster.stats);
+
+      if (heroHits) {
+        // Calculate crit with modifiers
+        const modifiedCritStats = {
+          ...heroStats,
+          acuity: heroStats.acuity + critModifier
+        };
+        heroCrit = checkCrit(modifiedCritStats);
+
+        // Use ability's stat for damage if specified
+        const attackStats = ability?.statUsed && ability.statUsed !== 'power'
+          ? { ...heroStats, power: heroStats[ability.statUsed] }
+          : heroStats;
+
+        heroDamage = calculateDamage(attackStats, combat.monster.stats, heroDamageType, totalDamageMultiplier);
+        if (heroCrit) {
+          heroDamage = Math.floor(heroDamage * 1.5);
+        }
+        combat.monster.currentHP = Math.max(0, combat.monster.currentHP - heroDamage);
+
+        const abilityName = ability ? ability.name : 'Attack';
+        roundLog.push({
+          type: 'hero_attack',
+          hit: true,
+          crit: heroCrit,
+          damage: heroDamage,
+          damageType: heroDamageType,
+          ability: ability?.name,
+          multiplier: totalDamageMultiplier,
+          message: heroCrit
+            ? `Critical ${abilityName}! You deal ${heroDamage} damage to ${combat.monster.name}!`
+            : `Your ${abilityName} hits ${combat.monster.name} for ${heroDamage} damage.`,
+          monsterHP: combat.monster.currentHP
+        });
+      } else {
+        const abilityName = ability ? ability.name : 'attack';
+        roundLog.push({
+          type: 'hero_attack',
+          hit: false,
+          ability: ability?.name,
+          message: `Your ${abilityName} misses ${combat.monster.name}!`,
+          monsterHP: combat.monster.currentHP
+        });
+      }
     }
 
     // Check if monster is defeated
@@ -616,21 +701,15 @@ const heroAttack = async (req, res, next) => {
 
       // Add level up info if hero leveled
       if (levelUpResult.levelsGained > 0) {
+        const effectiveStats = hero.effectiveStats;
         responseData.levelUp = {
           levelsGained: levelUpResult.levelsGained,
           previousLevel: previousLevel,
           newLevel: levelUpResult.newLevel,
           statGains: levelUpResult.statGains,
-          newStats: {
-            power: hero.stats.power,
-            toughness: hero.stats.toughness,
-            brilliance: hero.stats.brilliance,
-            spirit: hero.stats.spirit,
-            acuity: hero.stats.acuity,
-            instinct: hero.stats.instinct
-          },
-          newMaxHP: hero.stats.toughness * 5,
-          newMaxMP: hero.stats.spirit * 5
+          newStats: effectiveStats,
+          newMaxHP: hero.maxHP,
+          newMaxMP: hero.maxMP
         };
       }
 
@@ -648,44 +727,67 @@ const heroAttack = async (req, res, next) => {
     }
 
     // Monster's turn
-    const monsterHits = checkHit(combat.monster.stats, heroStats);
     let monsterDamage = 0;
     let monsterCrit = false;
+    let monsterHits = false;
 
-    // Get damage multiplier for monster's attack type
-    // (Hero weaknesses would be determined by equipment - for now, neutral)
-    const monsterDamageMultiplier = 1.0;
+    // Check for dodge (from Evade ability)
+    const dodgeRoll = Math.random() * 100;
+    const heroDodged = dodgeChance > 0 && dodgeRoll < dodgeChance;
 
-    if (monsterHits) {
-      monsterCrit = checkCrit(combat.monster.stats);
-      monsterDamage = calculateDamage(combat.monster.stats, heroStats, combat.monster.damageType, monsterDamageMultiplier);
-      if (monsterCrit) {
-        monsterDamage = Math.floor(monsterDamage * 1.5);
-      }
-      combat.hero.currentHP = Math.max(0, combat.hero.currentHP - monsterDamage);
-
+    if (heroDodged) {
       roundLog.push({
-        type: 'monster_attack',
-        hit: true,
-        crit: monsterCrit,
-        damage: monsterDamage,
-        damageType: combat.monster.damageType,
-        message: monsterCrit
-          ? `Critical hit! ${combat.monster.name} deals ${monsterDamage} damage to you!`
-          : `${combat.monster.name} strikes you for ${monsterDamage} damage.`,
+        type: 'hero_dodge',
+        message: `You dodge ${combat.monster.name}'s attack!`,
         heroHP: combat.hero.currentHP
       });
     } else {
-      roundLog.push({
-        type: 'monster_attack',
-        hit: false,
-        message: `${combat.monster.name}'s attack misses you!`,
-        heroHP: combat.hero.currentHP
-      });
+      monsterHits = checkHit(combat.monster.stats, heroStats);
+
+      // Get damage multiplier for monster's attack type
+      // (Hero weaknesses would be determined by equipment - for now, neutral)
+      let monsterDamageMultiplier = 1.0;
+
+      // Apply defense reduction if hero is defending
+      if (combat.hero.isDefending) {
+        monsterDamageMultiplier *= 0.5; // Take 50% less damage
+        combat.hero.isDefending = false; // Reset after one attack
+      }
+
+      if (monsterHits) {
+        monsterCrit = checkCrit(combat.monster.stats);
+        monsterDamage = calculateDamage(combat.monster.stats, heroStats, combat.monster.damageType, monsterDamageMultiplier);
+        if (monsterCrit) {
+          monsterDamage = Math.floor(monsterDamage * 1.5);
+        }
+        combat.hero.currentHP = Math.max(0, combat.hero.currentHP - monsterDamage);
+
+        const defendText = isDefending ? ' (reduced by Guard)' : '';
+        roundLog.push({
+          type: 'monster_attack',
+          hit: true,
+          crit: monsterCrit,
+          damage: monsterDamage,
+          damageType: combat.monster.damageType,
+          message: monsterCrit
+            ? `Critical hit! ${combat.monster.name} deals ${monsterDamage} damage to you!${defendText}`
+            : `${combat.monster.name} strikes you for ${monsterDamage} damage.${defendText}`,
+          heroHP: combat.hero.currentHP
+        });
+      } else {
+        roundLog.push({
+          type: 'monster_attack',
+          hit: false,
+          message: `${combat.monster.name}'s attack misses you!`,
+          heroHP: combat.hero.currentHP
+        });
+      }
     }
 
-    // Update hero HP in database
+    // Update hero HP, MP, and Stamina in database
     hero.currentHP = combat.hero.currentHP;
+    hero.currentMP = combat.hero.currentMP;
+    hero.currentStamina = combat.hero.currentStamina;
     await hero.save();
 
     // Check if hero is defeated
@@ -700,7 +802,9 @@ const heroAttack = async (req, res, next) => {
 
       // For now, respawn at last safe location
       // In full implementation, this would handle death penalty
-      hero.currentHP = Math.floor(hero.stats.toughness * 5 * 0.5); // Respawn at 50% HP
+      hero.currentHP = Math.floor(hero.maxHP * 0.5); // Respawn at 50% HP
+      hero.currentMP = hero.currentMP; // Keep current MP
+      hero.currentStamina = hero.maxStamina; // Restore stamina
       await hero.save();
 
       return res.json({
@@ -785,8 +889,8 @@ const fleeCombat = async (req, res, next) => {
       });
     }
 
-    // Flee chance based on Instinct
-    const fleeChance = 40 + (hero.stats.instinct * 2);
+    // Flee chance based on Instinct (use effectiveStats)
+    const fleeChance = 40 + (hero.effectiveStats.instinct * 2);
     const roll = Math.random() * 100;
     const fleeSuccess = roll < Math.min(90, fleeChance);
 
@@ -824,13 +928,8 @@ const fleeCombat = async (req, res, next) => {
       message: `You fail to escape! ${combat.monster.name} attacks!`
     });
 
-    // Monster attack
-    const heroStats = {
-      power: hero.stats.power,
-      toughness: hero.stats.toughness,
-      acuity: hero.stats.acuity,
-      instinct: hero.stats.instinct
-    };
+    // Monster attack (use effectiveStats)
+    const heroStats = hero.effectiveStats;
 
     const monsterHits = checkHit(combat.monster.stats, heroStats);
     if (monsterHits) {

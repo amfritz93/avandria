@@ -97,6 +97,12 @@ const initialState = {
   heroHP: 0,
   heroMP: 0,
   heroStamina: 0,
+  heroMaxHP: 0,
+  heroMaxMP: 0,
+  heroMaxStamina: 0,
+
+  // Hero abilities
+  abilities: [],
 
   // Combat progress
   round: 0,
@@ -165,6 +171,10 @@ const combatSlice = createSlice({
         state.heroHP = action.payload.combat.heroHP;
         state.heroMP = action.payload.combat.heroMP;
         state.heroStamina = action.payload.combat.heroStamina;
+        state.heroMaxHP = action.payload.combat.heroMaxHP || state.heroMaxHP;
+        state.heroMaxMP = action.payload.combat.heroMaxMP || state.heroMaxMP;
+        state.heroMaxStamina = action.payload.combat.heroMaxStamina || state.heroMaxStamina;
+        state.abilities = action.payload.combat.abilities || [];
         state.round = action.payload.combat.round;
         state.log = action.payload.combat.log;
       })
@@ -268,6 +278,12 @@ export const selectInCombat = (state) => state.combat.inCombat;
 export const selectCombatStatus = (state) => state.combat.combatStatus;
 export const selectMonster = (state) => state.combat.monster;
 export const selectHeroCombatHP = (state) => state.combat.heroHP;
+export const selectHeroCombatMP = (state) => state.combat.heroMP;
+export const selectHeroCombatStamina = (state) => state.combat.heroStamina;
+export const selectHeroMaxHP = (state) => state.combat.heroMaxHP;
+export const selectHeroMaxMP = (state) => state.combat.heroMaxMP;
+export const selectHeroMaxStamina = (state) => state.combat.heroMaxStamina;
+export const selectAbilities = (state) => state.combat.abilities;
 export const selectCombatRound = (state) => state.combat.round;
 export const selectCombatLog = (state) => state.combat.log;
 export const selectRewards = (state) => state.combat.rewards;
@@ -278,5 +294,6 @@ export const selectIsAttacking = (state) => state.combat.attacking;
 export const selectIsFleeing = (state) => state.combat.fleeing;
 export const selectIsStartingCombat = (state) => state.combat.starting;
 export const selectStartError = (state) => state.combat.startError;
+export const selectAttackError = (state) => state.combat.attackError;
 
 export default combatSlice.reducer;

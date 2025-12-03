@@ -116,12 +116,13 @@ const createHero = async (req, res, next) => {
       equipmentObjectIds[slot] = item ? item._id : null;
     }
 
-    // Calculate initial HP and MP
-    // Effective Toughness = base + calling mod (no level bonuses yet)
+    // Calculate initial HP, MP, and Stamina
+    // Effective stats = base + calling mod (no level bonuses yet)
     const effectiveToughness = baseStats.toughness + callingMods.toughness;
     const effectiveSpirit = baseStats.spirit + callingMods.spirit;
     const maxHP = 10 + (effectiveToughness * 3);
     const maxMP = 10 + (effectiveSpirit * 3);
+    const maxStamina = effectiveToughness * 5;
 
     // Create the hero
     const hero = await Hero.create({
@@ -140,6 +141,7 @@ const createHero = async (req, res, next) => {
       // Vitality (start at full)
       currentHP: maxHP,
       currentMP: maxMP,
+      currentStamina: maxStamina,
       currentRations: startingRations,
 
       // Stats
