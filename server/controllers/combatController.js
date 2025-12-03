@@ -6,11 +6,83 @@ const Location = require('../models/Location');
 const tutorialLocations = require('../data/locations/tutorial');
 const verdantWilds = require('../data/locations/verdantWilds');
 
+// Import monster data for seeding/lookup
+const monsterData = require('../data/monsters');
+
 /**
  * Combat State Storage (in-memory for now)
  * In production, this would be stored in Redis or similar
  */
 const activeCombats = new Map();
+
+// HP multipliers by tier (used for seed data monsters)
+const HP_MULTIPLIERS = {
+  trash: 5,
+  minion: 6,
+  elite: 8,
+  champion: 10,
+  mini_boss: 15,
+  boss: 20
+};
+
+// Category difficulty modifiers
+const CATEGORY_MODIFIERS = {
+  beast: 1.0,
+  humanoid: 1.0,
+  faerie: 1.05,
+  cursed: 1.05,
+  construct: 1.10,
+  undead: 1.10,
+  magical_beast: 1.15,
+  celestial: 1.15,
+  aberration: 1.20,
+  dragon: 1.20
+};
+
+// Category weaknesses, resistances, immunities
+const CATEGORY_DEFENSES = {
+  beast: { weaknesses: ['fire', 'piercing'], resistance: 'bludgeoning', immunity: 'arcane' },
+  humanoid: { weaknesses: ['slashing', 'air'], resistance: 'bludgeoning', immunity: 'earth' },
+  faerie: { weaknesses: ['bludgeoning', 'arcane'], resistance: 'air', immunity: 'water' },
+  cursed: { weaknesses: ['fire', 'slashing'], resistance: 'poison', immunity: 'earth' },
+  construct: { weaknesses: ['bludgeoning', 'water'], resistance: 'piercing', immunity: 'poison' },
+  undead: { weaknesses: ['arcane', 'air'], resistance: 'piercing', immunity: 'bludgeoning' },
+  magical_beast: { weaknesses: ['earth', 'arcane'], resistance: 'air', immunity: 'fire' },
+  celestial: { weaknesses: ['poison', 'earth'], resistance: 'fire', immunity: 'air' },
+  aberration: { weaknesses: ['bludgeoning', 'water'], resistance: 'arcane', immunity: 'poison' },
+  dragon: { weaknesses: ['piercing', 'poison'], resistance: 'fire', immunity: 'slashing' }
+};
+
+/**
+ * Helper: Create a monster object from seed data matching the schema
+ */
+const createMonsterFromSeed = (seedData) => {
+  const modifier = CATEGORY_MODIFIERS[seedData.category] || 1.0;
+  const hpMultiplier = HP_MULTIPLIERS[seedData.tier] || 5;
+  const defenses = CATEGORY_DEFENSES[seedData.category] || { weaknesses: [], resistance: null, immunity: null };
+
+  // Calculate effective stats
+  const effectiveStats = {
+    power: Math.floor(seedData.stats.power * modifier),
+    toughness: Math.floor(seedData.stats.toughness * modifier),
+    brilliance: Math.floor(seedData.stats.brilliance * modifier),
+    spirit: Math.floor(seedData.stats.spirit * modifier),
+    acuity: Math.floor(seedData.stats.acuity * modifier),
+    instinct: Math.floor(seedData.stats.instinct * modifier)
+  };
+
+  return {
+    ...seedData,
+    _id: seedData.monsterId, // Use monsterId as a pseudo-ID
+    effectiveStats,
+    maxHP: seedData.stats.toughness * hpMultiplier,
+    maxMP: seedData.stats.spirit * 5,
+    weaknesses: defenses.weaknesses,
+    resistance: defenses.resistance,
+    immunity: defenses.immunity,
+    isFromSeed: true
+  };
+};
 
 /**
  * Helper: Get location from database or seed data
@@ -28,6 +100,43 @@ const getLocationData = async (locationId) => {
     }
   }
   return location;
+};
+
+/**
+ * Helper: Get monster from database or seed data by monsterId
+ */
+const getMonsterData = async (monsterId) => {
+  let monster = await Monster.findOne({ monsterId });
+  if (!monster) {
+    const allMonsters = monsterData.getAllMonsters();
+    const seedData = allMonsters.find(m => m.monsterId === monsterId);
+    if (seedData) {
+      return createMonsterFromSeed(seedData);
+    }
+  }
+  return monster;
+};
+
+/**
+ * Helper: Get random monster from database or seed data for biome
+ */
+const getRandomMonsterForBiome = async (biomeTags, allowedTiers) => {
+  // Try database first
+  const dbMonster = await Monster.getRandomForBiome(biomeTags, allowedTiers);
+  if (dbMonster) return dbMonster;
+
+  // Fall back to seed data
+  const allMonsters = monsterData.getAllMonsters();
+  const eligibleMonsters = allMonsters.filter(m =>
+    allowedTiers.includes(m.tier) &&
+    m.habitatTags.some(tag => biomeTags.includes(tag)) &&
+    !m.fixedLocationId // Exclude fixed spawns
+  );
+
+  if (eligibleMonsters.length === 0) return null;
+
+  const randomMonster = eligibleMonsters[Math.floor(Math.random() * eligibleMonsters.length)];
+  return createMonsterFromSeed(randomMonster);
 };
 
 /**
@@ -251,14 +360,14 @@ const startCombat = async (req, res, next) => {
       });
     }
 
-    // Get monster for combat
+    // Get monster for combat (uses seed data fallback)
     let monster;
     if (location.monsters.fixedMonster) {
       // Fixed spawn (Champion, Mini-Boss, Boss)
-      monster = await Monster.findOne({ monsterId: location.monsters.fixedMonster });
+      monster = await getMonsterData(location.monsters.fixedMonster);
     } else {
       // Random spawn based on location biome and allowed tiers
-      monster = await Monster.getRandomForBiome(
+      monster = await getRandomMonsterForBiome(
         location.biomeTags || ['forest'],
         location.monsters.tiers || ['trash', 'minion', 'elite']
       );
