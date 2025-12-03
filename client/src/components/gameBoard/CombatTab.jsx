@@ -1,15 +1,85 @@
+import { useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  startCombat,
+  executeAttack,
+  attemptFlee,
+  clearCombatState,
+  selectInCombat,
+  selectCombatStatus,
+  selectMonster,
+  selectHeroCombatHP,
+  selectCombatRound,
+  selectCombatLog,
+  selectRewards,
+  selectIsAttacking,
+  selectIsFleeing,
+  selectIsStartingCombat,
+  selectStartError
+} from '../../store/combatSlice';
+import { fetchLocation } from '../../store/navigationSlice';
+import { fetchHero } from '../../store/heroSlice';
+
 /**
- * CombatTab - Combat interface placeholder
+ * CombatTab - Full combat interface
  *
- * Will display:
- * - Monster information
- * - Combat actions
- * - Battle log
- *
- * Full implementation in Phase F
+ * Displays:
+ * - Pre-combat: Monster info and engage button
+ * - In-combat: Monster HP, combat log, action buttons
+ * - Post-combat: Victory/defeat screen with rewards
  */
 const CombatTab = ({ monsters, hero, location }) => {
-  if (!monsters) {
+  const dispatch = useDispatch();
+  const logRef = useRef(null);
+
+  // Combat state from Redux
+  const inCombat = useSelector(selectInCombat);
+  const combatStatus = useSelector(selectCombatStatus);
+  const combatMonster = useSelector(selectMonster);
+  const combatHeroHP = useSelector(selectHeroCombatHP);
+  const round = useSelector(selectCombatRound);
+  const log = useSelector(selectCombatLog);
+  const rewards = useSelector(selectRewards);
+  const isAttacking = useSelector(selectIsAttacking);
+  const isFleeing = useSelector(selectIsFleeing);
+  const isStarting = useSelector(selectIsStartingCombat);
+  const startError = useSelector(selectStartError);
+
+  // Auto-scroll combat log
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [log]);
+
+  // Handle engage combat
+  const handleEngage = () => {
+    dispatch(startCombat(hero.id));
+  };
+
+  // Handle attack
+  const handleAttack = () => {
+    dispatch(executeAttack({ heroId: hero.id }));
+  };
+
+  // Handle flee
+  const handleFlee = () => {
+    dispatch(attemptFlee(hero.id));
+  };
+
+  // Handle continue after combat ends
+  const handleContinue = () => {
+    dispatch(clearCombatState());
+    // Refresh location and hero data
+    dispatch(fetchLocation({
+      locationId: hero.navigation.currentSite,
+      heroId: hero.id
+    }));
+    dispatch(fetchHero(hero.id));
+  };
+
+  // No monsters at location
+  if (!monsters && !inCombat) {
     return (
       <div className="text-center py-8">
         <p style={{ color: 'var(--color-text-muted)' }}>
@@ -19,8 +89,123 @@ const CombatTab = ({ monsters, hero, location }) => {
     );
   }
 
+  // Victory screen
+  if (combatStatus === 'victory') {
+    return (
+      <VictoryScreen
+        monster={combatMonster}
+        rewards={rewards}
+        log={log}
+        onContinue={handleContinue}
+      />
+    );
+  }
+
+  // Defeat screen
+  if (combatStatus === 'defeat') {
+    return (
+      <DefeatScreen
+        monster={combatMonster}
+        log={log}
+        onContinue={handleContinue}
+      />
+    );
+  }
+
+  // Fled screen
+  if (combatStatus === 'fled') {
+    return (
+      <FledScreen
+        log={log}
+        onContinue={handleContinue}
+      />
+    );
+  }
+
+  // Active combat
+  if (inCombat && combatMonster) {
+    return (
+      <div className="space-y-4">
+        {/* Monster Status */}
+        <MonsterStatus monster={combatMonster} />
+
+        {/* Combat Log */}
+        <div
+          ref={logRef}
+          className="h-48 overflow-y-auto p-3 rounded-lg space-y-2"
+          style={{ backgroundColor: 'var(--color-bg-primary)' }}
+        >
+          {log.map((entry, index) => (
+            <LogEntry key={index} entry={entry} />
+          ))}
+        </div>
+
+        {/* Round Counter */}
+        <div className="text-center">
+          <span
+            className="text-sm font-medium"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Round {round}
+          </span>
+        </div>
+
+        {/* Combat Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleAttack}
+            disabled={isAttacking || isFleeing}
+            className="flex-1 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+            style={{
+              backgroundColor: 'var(--color-danger)',
+              color: 'white'
+            }}
+          >
+            {isAttacking ? 'Attacking...' : 'Attack'}
+          </button>
+          <button
+            onClick={handleFlee}
+            disabled={isAttacking || isFleeing || ['mini_boss', 'boss'].includes(combatMonster.tier)}
+            className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+            style={{
+              backgroundColor: 'var(--color-bg-tertiary)',
+              color: 'var(--color-text-secondary)'
+            }}
+          >
+            {isFleeing ? 'Fleeing...' : 'Flee'}
+          </button>
+        </div>
+
+        {/* Cannot flee warning */}
+        {['mini_boss', 'boss'].includes(combatMonster.tier) && (
+          <p
+            className="text-xs text-center"
+            style={{ color: 'var(--color-warning)' }}
+          >
+            Cannot flee from a {combatMonster.tier.replace('_', ' ')}!
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Pre-combat view
   return (
     <div className="space-y-6">
+      {/* Error Message */}
+      {startError && (
+        <div
+          className="p-3 rounded-lg text-sm"
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            color: 'var(--color-danger)',
+            border: '1px solid rgba(239, 68, 68, 0.3)'
+          }}
+        >
+          {startError}
+        </div>
+      )}
+
       {/* Monster Info */}
       <div
         className="p-4 rounded-lg"
@@ -84,36 +269,18 @@ const CombatTab = ({ monsters, hero, location }) => {
           </div>
         )}
 
-        {/* Combat Action Placeholder */}
-        <div className="flex gap-3">
-          <button
-            className="flex-1 py-3 rounded-lg font-medium transition-colors"
-            style={{
-              backgroundColor: 'var(--color-danger)',
-              color: 'white'
-            }}
-            disabled
-          >
-            Engage in Combat
-          </button>
-          <button
-            className="px-4 py-3 rounded-lg font-medium transition-colors"
-            style={{
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-secondary)'
-            }}
-            disabled
-          >
-            Flee
-          </button>
-        </div>
-
-        <p
-          className="text-xs text-center mt-3"
-          style={{ color: 'var(--color-text-muted)' }}
+        {/* Combat Actions */}
+        <button
+          onClick={handleEngage}
+          disabled={isStarting}
+          className="w-full py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+          style={{
+            backgroundColor: 'var(--color-danger)',
+            color: 'white'
+          }}
         >
-          Combat system coming in Phase F
-        </p>
+          {isStarting ? 'Engaging...' : 'Engage in Combat'}
+        </button>
       </div>
 
       {/* Hero Quick Stats */}
@@ -148,6 +315,252 @@ const CombatTab = ({ monsters, hero, location }) => {
     </div>
   );
 };
+
+/**
+ * Monster Status Component
+ */
+const MonsterStatus = ({ monster }) => {
+  const hpPercent = (monster.currentHP / monster.maxHP) * 100;
+
+  return (
+    <div
+      className="p-4 rounded-lg"
+      style={{
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        border: '1px solid rgba(239, 68, 68, 0.3)'
+      }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h3
+            className="font-bold"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            {monster.name}
+          </h3>
+          <p
+            className="text-xs capitalize"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            {monster.tier.replace('_', ' ')} {monster.category} - Level {monster.level}
+          </p>
+        </div>
+        <div className="text-right">
+          <p
+            className="font-bold"
+            style={{ color: 'var(--color-hp)' }}
+          >
+            {monster.currentHP} / {monster.maxHP}
+          </p>
+          <p
+            className="text-xs"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            HP
+          </p>
+        </div>
+      </div>
+      {/* HP Bar */}
+      <div
+        className="h-3 rounded-full overflow-hidden"
+        style={{ backgroundColor: 'var(--color-hp-bg)' }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{
+            width: `${hpPercent}%`,
+            backgroundColor: 'var(--color-hp)'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Combat Log Entry Component
+ */
+const LogEntry = ({ entry }) => {
+  const getEntryStyle = () => {
+    switch (entry.type) {
+      case 'hero_attack':
+        return entry.hit
+          ? { color: entry.crit ? 'var(--color-gold)' : 'var(--color-success)' }
+          : { color: 'var(--color-text-muted)' };
+      case 'monster_attack':
+        return entry.hit
+          ? { color: entry.crit ? 'var(--color-warning)' : 'var(--color-danger)' }
+          : { color: 'var(--color-text-muted)' };
+      case 'monster_defeated':
+        return { color: 'var(--color-success)', fontWeight: 'bold' };
+      case 'hero_defeated':
+        return { color: 'var(--color-danger)', fontWeight: 'bold' };
+      case 'flee_success':
+        return { color: 'var(--color-info)' };
+      case 'flee_failed':
+        return { color: 'var(--color-warning)' };
+      case 'combat_start':
+        return { color: 'var(--color-accent)', fontWeight: 'bold' };
+      default:
+        return { color: 'var(--color-text-secondary)' };
+    }
+  };
+
+  return (
+    <p className="text-sm" style={getEntryStyle()}>
+      {entry.message}
+    </p>
+  );
+};
+
+/**
+ * Victory Screen Component
+ */
+const VictoryScreen = ({ monster, rewards, log, onContinue }) => (
+  <div className="space-y-6">
+    <div
+      className="p-6 rounded-lg text-center"
+      style={{
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        border: '1px solid rgba(34, 197, 94, 0.3)'
+      }}
+    >
+      <h2
+        className="text-2xl font-bold mb-2"
+        style={{ color: 'var(--color-success)' }}
+      >
+        Victory!
+      </h2>
+      <p style={{ color: 'var(--color-text-secondary)' }}>
+        You have defeated {monster?.name}!
+      </p>
+    </div>
+
+    {/* Rewards */}
+    {rewards && (
+      <div
+        className="p-4 rounded-lg"
+        style={{ backgroundColor: 'var(--color-bg-tertiary)' }}
+      >
+        <h3
+          className="font-medium mb-3"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Rewards
+        </h3>
+        <div className="flex gap-6">
+          <div className="flex items-center gap-2">
+            <span style={{ color: 'var(--color-xp)' }}>XP</span>
+            <span
+              className="font-bold"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              +{rewards.xp}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ color: 'var(--color-gold)' }}>Gold</span>
+            <span
+              className="font-bold"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              +{rewards.gold}
+            </span>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <button
+      onClick={onContinue}
+      className="w-full py-3 rounded-lg font-medium"
+      style={{
+        backgroundColor: 'var(--color-accent)',
+        color: 'white'
+      }}
+    >
+      Continue
+    </button>
+  </div>
+);
+
+/**
+ * Defeat Screen Component
+ */
+const DefeatScreen = ({ monster, log, onContinue }) => (
+  <div className="space-y-6">
+    <div
+      className="p-6 rounded-lg text-center"
+      style={{
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        border: '1px solid rgba(239, 68, 68, 0.3)'
+      }}
+    >
+      <h2
+        className="text-2xl font-bold mb-2"
+        style={{ color: 'var(--color-danger)' }}
+      >
+        Defeated
+      </h2>
+      <p style={{ color: 'var(--color-text-secondary)' }}>
+        You were defeated by {monster?.name}...
+      </p>
+      <p
+        className="text-sm mt-2"
+        style={{ color: 'var(--color-text-muted)' }}
+      >
+        You have been revived at half health.
+      </p>
+    </div>
+
+    <button
+      onClick={onContinue}
+      className="w-full py-3 rounded-lg font-medium"
+      style={{
+        backgroundColor: 'var(--color-bg-tertiary)',
+        color: 'var(--color-text-primary)'
+      }}
+    >
+      Continue
+    </button>
+  </div>
+);
+
+/**
+ * Fled Screen Component
+ */
+const FledScreen = ({ log, onContinue }) => (
+  <div className="space-y-6">
+    <div
+      className="p-6 rounded-lg text-center"
+      style={{
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        border: '1px solid rgba(59, 130, 246, 0.3)'
+      }}
+    >
+      <h2
+        className="text-2xl font-bold mb-2"
+        style={{ color: 'var(--color-info)' }}
+      >
+        Escaped!
+      </h2>
+      <p style={{ color: 'var(--color-text-secondary)' }}>
+        You successfully fled from combat.
+      </p>
+    </div>
+
+    <button
+      onClick={onContinue}
+      className="w-full py-3 rounded-lg font-medium"
+      style={{
+        backgroundColor: 'var(--color-bg-tertiary)',
+        color: 'var(--color-text-primary)'
+      }}
+    >
+      Continue
+    </button>
+  </div>
+);
 
 /**
  * Stat Display Component
