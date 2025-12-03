@@ -9,7 +9,7 @@ const sunlitGlades = require('./sunlitGlades');
 const whisperingThicket = require('./whisperingThicket');
 const windsweptPlains = require('./windsweptPlains');
 const stonepawHighlands = require('./stonepawHighlands');
-// const mistfallCoast = require('./mistfallCoast'); // TODO
+const mistfallCoast = require('./mistfallCoast');
 
 module.exports = {
   region,
@@ -18,7 +18,7 @@ module.exports = {
     whisperingThicket,
     windsweptPlains,
     stonepawHighlands,
-    // mistfallCoast
+    mistfallCoast
   },
   // Flatten all locations for seeding
   getAllLocations: () => [
@@ -27,6 +27,6 @@ module.exports = {
     ...whisperingThicket,
     ...windsweptPlains,
     ...stonepawHighlands,
-    // ...mistfallCoast
+    ...mistfallCoast
   ]
 };
