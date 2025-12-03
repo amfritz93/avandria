@@ -9,6 +9,12 @@ import {
   selectCombatStatus,
   selectMonster,
   selectHeroCombatHP,
+  selectHeroCombatMP,
+  selectHeroCombatStamina,
+  selectHeroMaxHP,
+  selectHeroMaxMP,
+  selectHeroMaxStamina,
+  selectAbilities,
   selectCombatRound,
   selectCombatLog,
   selectRewards,
@@ -16,7 +22,8 @@ import {
   selectIsAttacking,
   selectIsFleeing,
   selectIsStartingCombat,
-  selectStartError
+  selectStartError,
+  selectAttackError
 } from '../../store/combatSlice';
 import { fetchLocation } from '../../store/navigationSlice';
 import { fetchHero } from '../../store/heroSlice';
@@ -38,6 +45,12 @@ const CombatTab = ({ monsters, hero, location }) => {
   const combatStatus = useSelector(selectCombatStatus);
   const combatMonster = useSelector(selectMonster);
   const combatHeroHP = useSelector(selectHeroCombatHP);
+  const combatHeroMP = useSelector(selectHeroCombatMP);
+  const combatHeroStamina = useSelector(selectHeroCombatStamina);
+  const heroMaxHP = useSelector(selectHeroMaxHP);
+  const heroMaxMP = useSelector(selectHeroMaxMP);
+  const heroMaxStamina = useSelector(selectHeroMaxStamina);
+  const abilities = useSelector(selectAbilities);
   const round = useSelector(selectCombatRound);
   const log = useSelector(selectCombatLog);
   const rewards = useSelector(selectRewards);
@@ -46,6 +59,7 @@ const CombatTab = ({ monsters, hero, location }) => {
   const isFleeing = useSelector(selectIsFleeing);
   const isStarting = useSelector(selectIsStartingCombat);
   const startError = useSelector(selectStartError);
+  const attackError = useSelector(selectAttackError);
 
   // Auto-scroll combat log
   useEffect(() => {
@@ -59,9 +73,9 @@ const CombatTab = ({ monsters, hero, location }) => {
     dispatch(startCombat(hero.id));
   };
 
-  // Handle attack
-  const handleAttack = () => {
-    dispatch(executeAttack({ heroId: hero.id }));
+  // Handle attack (basic or ability)
+  const handleAttack = (abilityId = null) => {
+    dispatch(executeAttack({ heroId: hero.id, abilityId }));
   };
 
   // Handle flee
@@ -132,10 +146,37 @@ const CombatTab = ({ monsters, hero, location }) => {
         {/* Monster Status */}
         <MonsterStatus monster={combatMonster} />
 
+        {/* Hero Resources Bar */}
+        <div
+          className="p-3 rounded-lg"
+          style={{ backgroundColor: 'var(--color-bg-tertiary)' }}
+        >
+          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div>
+              <span style={{ color: 'var(--color-hp)' }}>HP</span>
+              <p className="font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                {combatHeroHP}/{heroMaxHP || hero?.maxHP}
+              </p>
+            </div>
+            <div>
+              <span style={{ color: 'var(--color-mp)' }}>MP</span>
+              <p className="font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                {combatHeroMP}/{heroMaxMP || hero?.maxMP}
+              </p>
+            </div>
+            <div>
+              <span style={{ color: 'var(--color-stamina)' }}>Stamina</span>
+              <p className="font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                {combatHeroStamina}/{heroMaxStamina || hero?.maxStamina}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Combat Log */}
         <div
           ref={logRef}
-          className="h-48 overflow-y-auto p-3 rounded-lg space-y-2"
+          className="h-32 overflow-y-auto p-3 rounded-lg space-y-2"
           style={{ backgroundColor: 'var(--color-bg-primary)' }}
         >
           {log.map((entry, index) => (
@@ -153,31 +194,68 @@ const CombatTab = ({ monsters, hero, location }) => {
           </span>
         </div>
 
-        {/* Combat Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={handleAttack}
-            disabled={isAttacking || isFleeing}
-            className="flex-1 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-            style={{
-              backgroundColor: 'var(--color-danger)',
-              color: 'white'
-            }}
-          >
-            {isAttacking ? 'Attacking...' : 'Attack'}
-          </button>
-          <button
-            onClick={handleFlee}
-            disabled={isAttacking || isFleeing || ['mini_boss', 'boss'].includes(combatMonster.tier)}
-            className="px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-            style={{
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-secondary)'
-            }}
-          >
-            {isFleeing ? 'Fleeing...' : 'Flee'}
-          </button>
+        {/* Attack Error */}
+        {attackError && (
+          <p className="text-xs text-center" style={{ color: 'var(--color-danger)' }}>
+            {attackError}
+          </p>
+        )}
+
+        {/* Ability Buttons */}
+        <div className="grid grid-cols-3 gap-2">
+          {abilities && abilities.length > 0 ? (
+            abilities.map((ability) => {
+              const canAfford =
+                (ability.mpCost === 0 || combatHeroMP >= ability.mpCost) &&
+                (ability.staminaCost === 0 || combatHeroStamina >= ability.staminaCost);
+
+              return (
+                <button
+                  key={ability.id}
+                  onClick={() => handleAttack(ability.id)}
+                  disabled={isAttacking || isFleeing || !canAfford}
+                  className="py-2 px-1 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                  style={{
+                    backgroundColor: canAfford ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
+                    color: canAfford ? 'white' : 'var(--color-text-muted)'
+                  }}
+                  title={`${ability.description}\n${ability.mpCost > 0 ? `MP: ${ability.mpCost}` : ''}${ability.staminaCost > 0 ? `Stamina: ${ability.staminaCost}` : ''}`}
+                >
+                  <div>{ability.name}</div>
+                  <div className="text-[10px] opacity-75">
+                    {ability.mpCost > 0 && <span style={{ color: 'var(--color-mp)' }}>{ability.mpCost} MP</span>}
+                    {ability.staminaCost > 0 && <span style={{ color: 'var(--color-stamina)' }}>{ability.staminaCost} ST</span>}
+                  </div>
+                </button>
+              );
+            })
+          ) : (
+            <button
+              onClick={() => handleAttack()}
+              disabled={isAttacking || isFleeing}
+              className="col-span-3 py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+              style={{
+                backgroundColor: 'var(--color-danger)',
+                color: 'white'
+              }}
+            >
+              {isAttacking ? 'Attacking...' : 'Attack'}
+            </button>
+          )}
         </div>
+
+        {/* Flee Button */}
+        <button
+          onClick={handleFlee}
+          disabled={isAttacking || isFleeing || ['mini_boss', 'boss'].includes(combatMonster.tier)}
+          className="w-full py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+          style={{
+            backgroundColor: 'var(--color-bg-tertiary)',
+            color: 'var(--color-text-secondary)'
+          }}
+        >
+          {isFleeing ? 'Fleeing...' : 'Flee'}
+        </button>
 
         {/* Cannot flee warning */}
         {['mini_boss', 'boss'].includes(combatMonster.tier) && (
@@ -300,17 +378,17 @@ const CombatTab = ({ monsters, hero, location }) => {
         <div className="grid grid-cols-3 gap-4 text-center">
           <StatDisplay
             label="Power"
-            value={hero?.stats?.power || 0}
+            value={hero?.effectiveStats?.power || 0}
             color="var(--color-danger)"
           />
           <StatDisplay
             label="Toughness"
-            value={hero?.stats?.toughness || 0}
+            value={hero?.effectiveStats?.toughness || 0}
             color="var(--color-success)"
           />
           <StatDisplay
             label="Acuity"
-            value={hero?.stats?.acuity || 0}
+            value={hero?.effectiveStats?.acuity || 0}
             color="var(--color-info)"
           />
         </div>
