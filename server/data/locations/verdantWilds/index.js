@@ -6,7 +6,7 @@
 
 const region = require('./region');
 const sunlitGlades = require('./sunlitGlades');
-// const whisperingThicket = require('./whisperingThicket'); // TODO
+const whisperingThicket = require('./whisperingThicket');
 // const windsweptPlains = require('./windsweptPlains'); // TODO
 // const stonepawHighlands = require('./stonepawHighlands'); // TODO
 // const mistfallCoast = require('./mistfallCoast'); // TODO
@@ -15,7 +15,7 @@ module.exports = {
   region,
   territories: {
     sunlitGlades,
-    // whisperingThicket,
+    whisperingThicket,
     // windsweptPlains,
     // stonepawHighlands,
     // mistfallCoast
@@ -24,7 +24,7 @@ module.exports = {
   getAllLocations: () => [
     region,
     ...sunlitGlades,
-    // ...whisperingThicket,
+    ...whisperingThicket,
     // ...windsweptPlains,
     // ...stonepawHighlands,
     // ...mistfallCoast
