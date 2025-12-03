@@ -7,15 +7,17 @@ const HeroStatsBar = ({ hero }) => {
   if (!hero) return null;
 
   const { currentHP, currentMP, currentStamina } = hero;
-  const maxHP = hero.stats?.toughness * 5 || 50;
-  const maxMP = hero.stats?.spirit * 5 || 50;
-  const maxStamina = 100;
+
+  // Use virtual max values from the hero model
+  const maxHP = hero.maxHP || 50;
+  const maxMP = hero.maxMP || 50;
+  const maxStamina = hero.maxStamina || 50;
 
   // XP calculation
   const xpThresholds = [20, 20, 25, 25, 30];
   const currentLevel = hero.level || 1;
   const xpNeeded = xpThresholds[(currentLevel - 1) % xpThresholds.length] || 30;
-  const currentXP = hero.experience?.current || 0;
+  const currentXP = hero.experience?.current || hero.currentXP || 0;
   const xpPercent = Math.min((currentXP / xpNeeded) * 100, 100);
 
   return (
@@ -83,7 +85,7 @@ const HeroStatsBar = ({ hero }) => {
           </svg>
         </span>
         <span className="text-sm font-medium" style={{ color: 'var(--color-gold)' }}>
-          {hero.inventory?.gold?.toLocaleString() || 0}
+          {(hero.gold || hero.inventory?.gold || 0).toLocaleString()}
         </span>
       </div>
     </div>
