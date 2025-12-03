@@ -74,6 +74,112 @@ const checkCrit = (attacker) => {
 };
 
 /**
+ * XP Thresholds for leveling
+ * Pattern: 20, 20, 25, 25, 30 (repeating every 5 levels)
+ */
+const XP_THRESHOLDS = [20, 20, 25, 25, 30];
+
+/**
+ * Get XP required for next level
+ * @param {number} currentLevel - Hero's current level
+ */
+const getXPForNextLevel = (currentLevel) => {
+  // Use pattern index (0-4) based on level
+  const patternIndex = (currentLevel - 1) % 5;
+  return XP_THRESHOLDS[patternIndex];
+};
+
+/**
+ * Check and apply level up(s) if hero has enough XP
+ * @param {Object} hero - Hero document
+ * @returns {Object} Level up info { levelsGained, newLevel, statGains }
+ */
+const checkLevelUp = (hero) => {
+  let levelsGained = 0;
+  let totalStatGains = {
+    power: 0,
+    toughness: 0,
+    brilliance: 0,
+    spirit: 0,
+    acuity: 0,
+    instinct: 0
+  };
+
+  // Keep leveling up while hero has enough XP
+  while (true) {
+    const xpNeeded = getXPForNextLevel(hero.level);
+    if (hero.experience.current < xpNeeded) break;
+
+    // Level up!
+    hero.experience.current -= xpNeeded;
+    hero.experience.total = (hero.experience.total || 0) + xpNeeded;
+    hero.level += 1;
+    levelsGained += 1;
+
+    // Grant stat points based on calling
+    // Each level grants +1 to primary stat and +1 to a secondary stat
+    const statGains = getStatGainsForLevel(hero);
+    for (const [stat, gain] of Object.entries(statGains)) {
+      hero.stats[stat] += gain;
+      totalStatGains[stat] += gain;
+    }
+
+    // Increase HP/MP caps and restore to full
+    hero.currentHP = hero.stats.toughness * 5;
+    hero.currentMP = hero.stats.spirit * 5;
+
+    // Max level cap (for now)
+    if (hero.level >= 20) break;
+  }
+
+  return {
+    levelsGained,
+    newLevel: hero.level,
+    statGains: totalStatGains
+  };
+};
+
+/**
+ * Get stat gains for a level up based on hero's calling
+ * @param {Object} hero - Hero document
+ */
+const getStatGainsForLevel = (hero) => {
+  // Default stat gains (will be customized by calling later)
+  // For now, +1 to two stats based on level parity
+  const level = hero.level;
+  const gains = {};
+
+  // Primary stat based on calling
+  const callingPrimary = {
+    warrior: 'power',
+    guardian: 'toughness',
+    assassin: 'acuity',
+    ranger: 'instinct',
+    mage: 'brilliance',
+    cleric: 'spirit',
+    warlock: 'brilliance',
+    monk: 'spirit'
+  };
+
+  // Secondary stat rotation
+  const secondaryStats = ['power', 'toughness', 'brilliance', 'spirit', 'acuity', 'instinct'];
+  const secondaryIndex = (level - 1) % 6;
+
+  const primaryStat = callingPrimary[hero.calling] || 'power';
+  const secondaryStat = secondaryStats[secondaryIndex];
+
+  gains[primaryStat] = (gains[primaryStat] || 0) + 1;
+  if (secondaryStat !== primaryStat) {
+    gains[secondaryStat] = (gains[secondaryStat] || 0) + 1;
+  } else {
+    // If same as primary, give +2 to primary
+    gains[primaryStat] += 1;
+  }
+
+  return gains;
+};
+
+/**
  * @desc    Start combat at current location
  * @route   POST /api/combat/start
  * @access  Private
@@ -340,10 +446,16 @@ const heroAttack = async (req, res, next) => {
         Math.random() * (rewards.goldMax - rewards.goldMin + 1) + rewards.goldMin
       );
 
+      // Store previous level for comparison
+      const previousLevel = hero.level;
+
       // Update hero
       hero.experience.current += xpGained;
       hero.inventory.gold += goldGained;
       hero.lifetimeStats.totalMonstersSlain = (hero.lifetimeStats.totalMonstersSlain || 0) + 1;
+
+      // Check for level up
+      const levelUpResult = checkLevelUp(hero);
 
       // Mark location as cleared if this was the only/last monster
       if (!hero.worldProgress.clearedSites.includes(combat.locationId)) {
@@ -371,28 +483,58 @@ const heroAttack = async (req, res, next) => {
       // Clean up combat state
       activeCombats.delete(heroId);
 
+      // Build response with level up info if applicable
+      const responseData = {
+        combat: {
+          status: 'victory',
+          monster: combat.monster,
+          heroHP: levelUpResult.levelsGained > 0 ? hero.currentHP : combat.hero.currentHP,
+          round: combat.round,
+          log: [...combat.log, ...roundLog]
+        },
+        rewards: {
+          xp: xpGained,
+          gold: goldGained,
+          items: []
+        },
+        worldProgress: {
+          clearedCount: hero.worldProgress.clearedSites.length,
+          championsDefeated: hero.worldProgress.defeatedChampions.length,
+          miniBossesDefeated: hero.worldProgress.defeatedMiniBosses.length,
+          bossesDefeated: hero.worldProgress.defeatedBosses.length
+        }
+      };
+
+      // Add level up info if hero leveled
+      if (levelUpResult.levelsGained > 0) {
+        responseData.levelUp = {
+          levelsGained: levelUpResult.levelsGained,
+          previousLevel: previousLevel,
+          newLevel: levelUpResult.newLevel,
+          statGains: levelUpResult.statGains,
+          newStats: {
+            power: hero.stats.power,
+            toughness: hero.stats.toughness,
+            brilliance: hero.stats.brilliance,
+            spirit: hero.stats.spirit,
+            acuity: hero.stats.acuity,
+            instinct: hero.stats.instinct
+          },
+          newMaxHP: hero.stats.toughness * 5,
+          newMaxMP: hero.stats.spirit * 5
+        };
+      }
+
+      // Add XP progress info
+      responseData.xpProgress = {
+        current: hero.experience.current,
+        needed: getXPForNextLevel(hero.level),
+        total: hero.experience.total || 0
+      };
+
       return res.json({
         success: true,
-        data: {
-          combat: {
-            status: 'victory',
-            monster: combat.monster,
-            heroHP: combat.hero.currentHP,
-            round: combat.round,
-            log: [...combat.log, ...roundLog]
-          },
-          rewards: {
-            xp: xpGained,
-            gold: goldGained,
-            items: []
-          },
-          worldProgress: {
-            clearedCount: hero.worldProgress.clearedSites.length,
-            championsDefeated: hero.worldProgress.defeatedChampions.length,
-            miniBossesDefeated: hero.worldProgress.defeatedMiniBosses.length,
-            bossesDefeated: hero.worldProgress.defeatedBosses.length
-          }
-        }
+        data: responseData
       });
     }
 
