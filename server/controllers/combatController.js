@@ -299,10 +299,11 @@ const getStatGainsForLevel = (hero) => {
  *
  * Body:
  * - heroId: string (required)
+ * - monsterId: string (optional - specific monster to fight)
  */
 const startCombat = async (req, res, next) => {
   try {
-    const { heroId } = req.body;
+    const { heroId, monsterId } = req.body;
     const accountId = req.user.id;
 
     if (!heroId) {
@@ -366,11 +367,47 @@ const startCombat = async (req, res, next) => {
 
     // Get monster for combat (uses seed data fallback)
     let monster;
-    if (location.monsters.fixedMonster) {
+
+    if (monsterId) {
+      // Player selected a specific monster to fight
+      monster = await getMonsterData(monsterId);
+
+      if (!monster) {
+        return res.status(404).json({
+          success: false,
+          message: `Monster not found: ${monsterId}`
+        });
+      }
+
+      // Validate monster is available at this location
+      if (location.monsters.fixedMonster) {
+        // Fixed spawn locations only allow the fixed monster
+        if (location.monsters.fixedMonster !== monsterId) {
+          return res.status(400).json({
+            success: false,
+            message: 'This monster is not available at this location'
+          });
+        }
+      } else {
+        // Random spawn locations - verify monster's habitat matches location biome
+        const locationBiomes = location.biomeTags || ['forest'];
+        const allowedTiers = location.monsters.tiers || ['trash', 'minion', 'elite'];
+
+        const habitatMatch = monster.habitatTags?.some(tag => locationBiomes.includes(tag));
+        const tierMatch = allowedTiers.includes(monster.tier);
+
+        if (!habitatMatch || !tierMatch) {
+          return res.status(400).json({
+            success: false,
+            message: 'This monster is not available at this location'
+          });
+        }
+      }
+    } else if (location.monsters.fixedMonster) {
       // Fixed spawn (Champion, Mini-Boss, Boss)
       monster = await getMonsterData(location.monsters.fixedMonster);
     } else {
-      // Random spawn based on location biome and allowed tiers
+      // No monster specified for random spawn - pick one randomly
       monster = await getRandomMonsterForBiome(
         location.biomeTags || ['forest'],
         location.monsters.tiers || ['trash', 'minion', 'elite']

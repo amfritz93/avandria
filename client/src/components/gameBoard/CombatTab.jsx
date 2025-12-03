@@ -68,9 +68,9 @@ const CombatTab = ({ monsters, hero, location }) => {
     }
   }, [log]);
 
-  // Handle engage combat
-  const handleEngage = () => {
-    dispatch(startCombat(hero.id));
+  // Handle engage combat with specific monster
+  const handleEngage = (monsterId = null) => {
+    dispatch(startCombat({ heroId: hero.id, monsterId }));
   };
 
   // Handle attack (basic or ability)
@@ -340,7 +340,7 @@ const CombatTab = ({ monsters, hero, location }) => {
           </div>
 
           <button
-            onClick={handleEngage}
+            onClick={() => handleEngage(monsters.monsterId)}
             disabled={isStarting}
             className="w-full py-3 rounded-lg font-medium transition-all disabled:opacity-50"
             style={{
@@ -353,7 +353,7 @@ const CombatTab = ({ monsters, hero, location }) => {
         </div>
       )}
 
-      {/* Random Monsters - Show possible encounters */}
+      {/* Random Monsters - Show selectable monster buttons */}
       {monsters.type === 'random' && (
         <div
           className="p-4 rounded-lg"
@@ -366,12 +366,12 @@ const CombatTab = ({ monsters, hero, location }) => {
             className="text-lg font-bold mb-3"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            Hostile Creatures Nearby
+            Select a Creature to Fight
           </h3>
 
-          {/* Show possible monsters by tier */}
+          {/* Show clickable monster buttons by tier */}
           {monsters.possibleMonsters && Object.entries(monsters.possibleMonsters).map(([tier, monsterList]) => (
-            <div key={tier} className="mb-3">
+            <div key={tier} className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <span
                   className="px-2 py-0.5 text-xs font-bold uppercase rounded"
@@ -383,18 +383,25 @@ const CombatTab = ({ monsters, hero, location }) => {
                   {tier.replace('_', ' ')}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {monsterList.map((monster) => (
-                  <span
+                  <button
                     key={monster.monsterId}
-                    className="px-2 py-1 text-xs rounded capitalize"
+                    onClick={() => handleEngage(monster.monsterId)}
+                    disabled={isStarting}
+                    className="w-full py-2 px-3 rounded-lg text-left transition-all disabled:opacity-50 hover:brightness-110"
                     style={{
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-secondary)'
+                      backgroundColor: getTierColor(tier),
+                      color: 'white'
                     }}
                   >
-                    {monster.name} (Lv.{monster.level})
-                  </span>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{monster.name}</span>
+                      <span className="text-xs opacity-80">
+                        Lv.{monster.level} {monster.category}
+                      </span>
+                    </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -409,18 +416,6 @@ const CombatTab = ({ monsters, hero, location }) => {
               Unknown creatures lurk here...
             </p>
           )}
-
-          <button
-            onClick={handleEngage}
-            disabled={isStarting}
-            className="w-full py-3 rounded-lg font-medium transition-all disabled:opacity-50"
-            style={{
-              backgroundColor: 'var(--color-danger)',
-              color: 'white'
-            }}
-          >
-            {isStarting ? 'Engaging...' : 'Engage Random Encounter'}
-          </button>
         </div>
       )}
 

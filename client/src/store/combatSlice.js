@@ -15,12 +15,13 @@ import combatService from '../services/combatService';
 
 /**
  * Start combat at current location
+ * @param {Object} params - { heroId, monsterId (optional) }
  */
 export const startCombat = createAsyncThunk(
   'combat/startCombat',
-  async (heroId, { rejectWithValue }) => {
+  async ({ heroId, monsterId }, { rejectWithValue }) => {
     try {
-      const response = await combatService.startCombat(heroId);
+      const response = await combatService.startCombat(heroId, monsterId);
       return response.data;
     } catch (error) {
       return rejectWithValue(
