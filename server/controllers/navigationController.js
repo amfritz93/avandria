@@ -6,6 +6,71 @@ const Monster = require('../models/Monster');
 const tutorialLocations = require('../data/locations/tutorial');
 const verdantWilds = require('../data/locations/verdantWilds');
 
+// Import monster data for lookup
+const monsterData = require('../data/monsters');
+
+/**
+ * Helper: Get monster from database or seed data
+ */
+const getMonsterPreview = async (monsterId) => {
+  // Try database first
+  let monster = await Monster.findOne({ monsterId });
+  if (monster) {
+    return {
+      monsterId: monster.monsterId,
+      name: monster.name,
+      tier: monster.tier,
+      level: monster.level,
+      category: monster.category
+    };
+  }
+
+  // Fall back to seed data
+  const allMonsters = monsterData.getAllMonsters();
+  const seedMonster = allMonsters.find(m => m.monsterId === monsterId);
+  if (seedMonster) {
+    return {
+      monsterId: seedMonster.monsterId,
+      name: seedMonster.name,
+      tier: seedMonster.tier,
+      level: seedMonster.level,
+      category: seedMonster.category
+    };
+  }
+
+  return null;
+};
+
+/**
+ * Helper: Get possible random monsters for a location
+ */
+const getRandomMonsterPreviews = async (biomeTags, tiers) => {
+  // Get all monsters that could spawn at this location
+  const allMonsters = monsterData.getAllMonsters();
+  const eligible = allMonsters.filter(m =>
+    tiers.includes(m.tier) &&
+    m.habitatTags.some(tag => biomeTags.includes(tag)) &&
+    !m.fixedLocationId
+  );
+
+  // Return unique monsters by tier
+  const byTier = {};
+  for (const monster of eligible) {
+    if (!byTier[monster.tier]) {
+      byTier[monster.tier] = [];
+    }
+    byTier[monster.tier].push({
+      monsterId: monster.monsterId,
+      name: monster.name,
+      tier: monster.tier,
+      level: monster.level,
+      category: monster.category
+    });
+  }
+
+  return byTier;
+};
+
 /**
  * Helper: Get location from database or seed data
  * Falls back to seed data if not in database (for development)
@@ -106,22 +171,29 @@ const getLocation = async (req, res, next) => {
     let monsterInfo = null;
     if (location.monsters && location.monsters.count > 0 && !isCleared) {
       if (location.monsters.fixedMonster) {
-        // Fixed spawn (Champion, Mini-Boss, Boss)
-        const monster = await Monster.findOne({ monsterId: location.monsters.fixedMonster });
+        // Fixed spawn (Champion, Mini-Boss, Boss) - use helper with seed fallback
+        const monster = await getMonsterPreview(location.monsters.fixedMonster);
         if (monster) {
           monsterInfo = {
             type: 'fixed',
+            monster: monster,
             tier: monster.tier,
             name: monster.name,
-            level: monster.level
+            level: monster.level,
+            category: monster.category
           };
         }
       } else {
-        // Random spawn
+        // Random spawn - get possible monsters
+        const possibleMonsters = await getRandomMonsterPreviews(
+          location.biomeTags || ['forest'],
+          location.monsters.tiers || ['trash', 'minion']
+        );
         monsterInfo = {
           type: 'random',
           tiers: location.monsters.tiers,
-          count: location.monsters.count
+          count: location.monsters.count,
+          possibleMonsters: possibleMonsters
         };
       }
     }
