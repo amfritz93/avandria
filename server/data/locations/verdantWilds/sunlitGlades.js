@@ -80,7 +80,7 @@ const sunlitGladesLocations = [
     connections: [
       { locationId: 'mossy_overlook', passageType: 'road' }
     ],
-    monsters: { tiers: ['minion'], count: 1, respawns: false },
+    monsters: { tiers: ['trash', 'minion'], count: 1, respawns: false },
     flavorText: {
       corrupted: 'The hollow opens into a bowl of wildflowers surrounding the hollow trunks of ancient trees — old hives, abandoned now. A strange buzzing fills the air, deeper and angrier than any bee you\'ve known. The flowers have wilted at their centers, drained of something vital, and the honey that once drew travelers here has turned dark and foul. Whatever corrupted this place guards it jealously. The hollow offers no path forward — only confrontation.',
       cleansed: 'The hollow hums with life, wildflowers swaying as bees drift lazily between blossoms and ancient hive-trees. Golden honey drips from the hollow trunks, sweet and pure, a treasure of the glades restored. The air smells of nectar and warm summer days, peaceful and perfect. This is a place of abundance again, a gift for those who wander here. You returned the hollow to its keepers.'
@@ -102,7 +102,7 @@ const sunlitGladesLocations = [
       { locationId: 'hearthstone', passageType: 'road' },
       { locationId: 'old_orchard', passageType: 'road' }
     ],
-    monsters: { tiers: ['minion'], count: 1, respawns: false },
+    monsters: { tiers: ['trash', 'minion'], count: 1, respawns: false },
     flavorText: {
       corrupted: 'Willow branches hang low over a brook that winds through this broad clearing, their trailing leaves brushing the water\'s surface. The stream runs clear, but the willows themselves seem to shiver despite the still air. Paths branch from here toward distant rooftops and shadowed groves, choices waiting to be made. The grass is trampled in patterns that speak of struggle, of things dragged toward the water. What waits beneath the willows?',
       cleansed: 'Willow branches sway gently over a brook that sings as it winds through the clearing, crystal water catching the light. The trees stand graceful and calm, their trailing leaves dancing rather than shivering. Paths branch from here toward a welcoming settlement and peaceful groves, all roads safe now. Deer drink from the brook\'s edge, lifting their heads to watch you pass without fear. You brought peace to Willowbrook.'
@@ -149,7 +149,7 @@ const sunlitGladesLocations = [
     connections: [
       { locationId: 'hearthstone', passageType: 'road' }
     ],
-    monsters: { tiers: ['minion'], count: 1, respawns: false },
+    monsters: { tiers: ['trash', 'minion'], count: 1, respawns: false },
     flavorText: {
       corrupted: 'Weathered headstones rise from the fog that clings to this quiet cemetery on Hearthstone\'s edge. The mist is unnatural, cold and thick even when the sun shines bright beyond the iron fence. Flowers left by mourners have wilted overnight, and the groundskeeper refuses to tend the graves after dark. Shapes move between the stones — too solid to be fog, too silent to be living. The dead should rest peacefully here — will you ensure they do?',
       cleansed: 'Weathered headstones stand in peaceful rows, the fog lifted to reveal a quiet cemetery dappled in gentle sunlight. Fresh flowers rest on well-tended graves, and the iron fence gleams with new paint. The groundskeeper hums as he works, no longer afraid of what the mist might hide. Mourners visit openly now, remembering their loved ones without fear. You gave the dead their rest, and the living their peace.'
@@ -169,7 +169,7 @@ const sunlitGladesLocations = [
     connections: [
       { locationId: 'willowbrook_clearing', passageType: 'road' }
     ],
-    monsters: { tiers: ['minion'], count: 1, respawns: false },
+    monsters: { tiers: ['trash', 'minion'], count: 1, respawns: false },
     flavorText: {
       corrupted: 'Gnarled apple trees stand in crooked rows, their branches heavy with fruit that has grown dark and wrong. The orchard was abandoned seasons ago, and nature has begun to reclaim it — but something else moved in first. Rotting apples carpet the ground, their smell sickly sweet, and the buzz of flies is constant. Shadows gather thick beneath the branches despite the hour. The orchard offers no path forward — only secrets buried among the roots.',
       cleansed: 'The old apple trees stand tall again, their branches heavy with fruit that blushes red and gold in the sunlight. The orchard has found new life, wildflowers growing between the rows while birds nest in the canopy. Fallen apples feed deer that wander through without fear, the cycle of nature turning as it should. Someone has cleared the brush and marked a path for future visitors. You gave this forgotten place a second chance.'

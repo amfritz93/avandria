@@ -1,17 +1,41 @@
+import { useSelector } from 'react-redux';
+import {
+  selectInCombat,
+  selectHeroCombatHP,
+  selectHeroCombatMP,
+  selectHeroCombatStamina,
+  selectHeroMaxHP,
+  selectHeroMaxMP,
+  selectHeroMaxStamina
+} from '../../store/combatSlice';
+
 /**
  * HeroStatsBar - Displays hero's vital statistics
  *
  * Shows HP, MP, Stamina, XP progress, and gold
+ * During combat, displays real-time combat stats from combatSlice
  */
 const HeroStatsBar = ({ hero }) => {
+  // Combat state from Redux
+  const inCombat = useSelector(selectInCombat);
+  const combatHP = useSelector(selectHeroCombatHP);
+  const combatMP = useSelector(selectHeroCombatMP);
+  const combatStamina = useSelector(selectHeroCombatStamina);
+  const combatMaxHP = useSelector(selectHeroMaxHP);
+  const combatMaxMP = useSelector(selectHeroMaxMP);
+  const combatMaxStamina = useSelector(selectHeroMaxStamina);
+
   if (!hero) return null;
 
-  const { currentHP, currentMP, currentStamina } = hero;
+  // Use combat stats when in combat, otherwise use hero stats
+  const currentHP = inCombat ? combatHP : hero.currentHP;
+  const currentMP = inCombat ? combatMP : hero.currentMP;
+  const currentStamina = inCombat ? combatStamina : hero.currentStamina;
 
-  // Use virtual max values from the hero model
-  const maxHP = hero.maxHP || 50;
-  const maxMP = hero.maxMP || 50;
-  const maxStamina = hero.maxStamina || 50;
+  // Use virtual max values from the hero model (or combat state if available)
+  const maxHP = (inCombat && combatMaxHP) ? combatMaxHP : (hero.maxHP || 50);
+  const maxMP = (inCombat && combatMaxMP) ? combatMaxMP : (hero.maxMP || 50);
+  const maxStamina = (inCombat && combatMaxStamina) ? combatMaxStamina : (hero.maxStamina || 50);
 
   // XP calculation
   const xpThresholds = [20, 20, 25, 25, 30];
