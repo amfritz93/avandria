@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import CharacterCreation from './pages/CharacterCreation';
+import GameBoard from './pages/GameBoard';
 
 function App() {
   const { mode } = useSelector((state) => state.theme);
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/create-hero" element={<CharacterCreation />} />
+        <Route path="/game/:heroId" element={<GameBoard />} />
       </Routes>
     </Router>
   );

@@ -38,10 +38,7 @@ const Dashboard = () => {
   };
 
   const handlePlayHero = (heroId) => {
-    // TODO: Navigate to game view with selected hero
-    // For now, just log the selection
-    console.log('Playing hero:', heroId);
-    // Future: navigate(`/game/${heroId}`);
+    navigate(`/game/${heroId}`);
   };
 
   const handleDeleteHero = (heroId) => {

@@ -11,10 +11,23 @@
   --color-text-muted: #9ca3af;
   --color-accent: #7c3aed;
   --color-accent-hover: #6d28d9;
+  --color-accent-rgb: 124, 58, 237;
   --color-border: #d1d5db;
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Game stat colors */
+  --color-hp: #ef4444;
+  --color-hp-bg: #fecaca;
+  --color-mp: #3b82f6;
+  --color-mp-bg: #bfdbfe;
+  --color-stamina: #f59e0b;
+  --color-stamina-bg: #fde68a;
+  --color-xp: #8b5cf6;
+  --color-gold: #eab308;
 }
 
 /* Dark theme */
@@ -27,10 +40,23 @@
   --color-text-muted: #64748b;
   --color-accent: #a78bfa;
   --color-accent-hover: #8b5cf6;
+  --color-accent-rgb: 167, 139, 250;
   --color-border: #475569;
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-error: #f87171;
+  --color-danger: #f87171;
+  --color-info: #60a5fa;
+
+  /* Game stat colors (dark mode) */
+  --color-hp: #f87171;
+  --color-hp-bg: #450a0a;
+  --color-mp: #60a5fa;
+  --color-mp-bg: #1e3a5f;
+  --color-stamina: #fbbf24;
+  --color-stamina-bg: #422006;
+  --color-xp: #a78bfa;
+  --color-gold: #facc15;
 }
 
 /* Base styles */
