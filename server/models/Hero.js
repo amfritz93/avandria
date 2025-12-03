@@ -67,6 +67,7 @@ const HeroSchema = new mongoose.Schema({
   // ========== VITALITY ==========
   currentHP: { type: Number, default: 0 },
   currentMP: { type: Number, default: 0 },
+  currentStamina: { type: Number, default: 0 },
   currentRations: { type: Number, default: 0 },
 
   // ========== STATISTICS ==========
@@ -224,6 +225,7 @@ HeroSchema.methods.toSafeObject = function() {
     gold: this.gold,
     currentHP: this.currentHP,
     currentMP: this.currentMP,
+    currentStamina: this.currentStamina,
     currentRations: this.currentRations,
     maxHP: this.maxHP,
     maxMP: this.maxMP,
