@@ -88,12 +88,12 @@ const warriorSkillTree = {
       3: { id: 'bloodlust', name: 'Bloodlust', type: 'passive', description: 'Gain increased Power when your HP drops below 50%.' },
       4: { id: 'execution', name: 'Execution', type: 'active', description: 'An enhanced Strike with bonus damage against wounded enemies.' },
       5: { id: 'berserker_rage', name: 'Berserker Rage', type: 'passive', description: 'Critical hits restore a portion of your Stamina.' },
-      6: { id: 'cataclysm', name: 'Cataclysm', type: 'active', description: 'Unleash a devastating blow that deals massive damage to all enemies.' }
+      6: { id: 'cataclysm', name: 'Cataclysm', type: 'active', description: 'Unleash a devastating blow that deals massive damage to the enemy.' }
     }
   },
   toughness: {
     pathName: 'Path of the Bulwark',
-    description: 'Become an immovable fortress that shields allies from harm.',
+    description: 'Become an immovable fortress that withstands any assault.',
     stages: {
       1: { ...BASIC_ABILITIES.toughness },
       2: { id: 'shield_bash', name: 'Shield Bash', type: 'active', description: 'Bash an enemy with your shield, stunning them briefly.' },
@@ -112,7 +112,7 @@ const warriorSkillTree = {
       3: { id: 'mana_conduit', name: 'Mana Conduit', type: 'passive', description: 'Physical attacks restore a small amount of Mana.' },
       4: { id: 'elemental_spark', name: 'Elemental Spark', type: 'active', description: 'An enhanced Spark that can apply elemental effects.' },
       5: { id: 'spell_integration', name: 'Spell Integration', type: 'passive', description: 'Increase magical damage based on your Power stat.' },
-      6: { id: 'blade_storm', name: 'Blade Storm', type: 'active', description: 'Unleash a whirlwind of enchanted blades hitting all enemies.' }
+      6: { id: 'blade_storm', name: 'Blade Storm', type: 'active', description: 'Unleash a whirlwind of enchanted blades hitting the enemy multiple times.' }
     }
   },
   spirit: {
@@ -166,19 +166,19 @@ const paladinSkillTree = {
       3: { id: 'zealous_might', name: 'Zealous Might', type: 'passive', description: 'Increase Power when fighting unholy enemies.' },
       4: { id: 'righteous_strike', name: 'Righteous Strike', type: 'active', description: 'An enhanced Strike that heals you for a portion of damage dealt.' },
       5: { id: 'divine_strength', name: 'Divine Strength', type: 'passive', description: 'Your attacks have a chance to deal bonus holy damage.' },
-      6: { id: 'judgment_day', name: 'Judgment Day', type: 'active', description: 'Call down divine judgment, dealing massive holy damage to all enemies.' }
+      6: { id: 'judgment_day', name: 'Judgment Day', type: 'active', description: 'Call down divine judgment, dealing massive holy damage to the enemy.' }
     }
   },
   toughness: {
     pathName: 'Path of the Aegis',
-    description: 'Become a divine shield that protects the faithful.',
+    description: 'Become a divine shield blessed with holy protection.',
     stages: {
       1: { ...BASIC_ABILITIES.toughness },
       2: { id: 'divine_shield', name: 'Divine Shield', type: 'active', description: 'Surround yourself with holy light that absorbs damage.' },
       3: { id: 'blessed_armor', name: 'Blessed Armor', type: 'passive', description: 'Your armor gains bonus holy resistance.' },
-      4: { id: 'sanctuary', name: 'Sanctuary', type: 'active', description: 'An enhanced Guard that also protects nearby allies.' },
-      5: { id: 'martyrdom', name: 'Martyrdom', type: 'passive', description: 'Taking damage has a chance to heal nearby allies.' },
-      6: { id: 'divine_intervention', name: 'Divine Intervention', type: 'active', description: 'Call upon the gods to make you and allies invulnerable for 1 turn.' }
+      4: { id: 'sanctuary', name: 'Sanctuary', type: 'active', description: 'An enhanced Guard that creates a zone of divine protection.' },
+      5: { id: 'martyrdom', name: 'Martyrdom', type: 'passive', description: 'Taking damage has a chance to restore your HP.' },
+      6: { id: 'divine_intervention', name: 'Divine Intervention', type: 'active', description: 'Call upon the gods to make you invulnerable for 1 turn.' }
     }
   },
   brilliance: {
@@ -198,11 +198,11 @@ const paladinSkillTree = {
     description: 'Draw upon unshakeable faith for divine protection.',
     stages: {
       1: { ...BASIC_ABILITIES.spirit },
-      2: { id: 'lay_on_hands', name: 'Lay on Hands', type: 'active', description: 'Channel divine energy to heal yourself or an ally.' },
+      2: { id: 'lay_on_hands', name: 'Lay on Hands', type: 'active', description: 'Channel divine energy to heal yourself significantly.' },
       3: { id: 'blessed_resilience', name: 'Blessed Resilience', type: 'passive', description: 'Increase maximum HP based on Spirit.' },
       4: { id: 'divine_fortify', name: 'Divine Fortify', type: 'active', description: 'An enhanced Fortify that also grants HP regeneration.' },
-      5: { id: 'aura_of_protection', name: 'Aura of Protection', type: 'passive', description: 'Allies near you gain bonus magical resistance.' },
-      6: { id: 'resurrection', name: 'Resurrection', type: 'active', description: 'Bring a fallen ally back to life with full HP (once per battle).' }
+      5: { id: 'aura_of_protection', name: 'Aura of Protection', type: 'passive', description: 'Gain bonus magical resistance passively.' },
+      6: { id: 'second_chance', name: 'Second Chance', type: 'active', description: 'If you would die, instead restore to full HP (once per battle).' }
     }
   },
   acuity: {
@@ -219,14 +219,14 @@ const paladinSkillTree = {
   },
   instinct: {
     pathName: 'Path of Vigilance',
-    description: 'Maintain constant awareness to protect the innocent.',
+    description: 'Maintain constant awareness and divine reflexes.',
     stages: {
       1: { ...BASIC_ABILITIES.instinct },
-      2: { id: 'intercept', name: 'Intercept', type: 'active', description: 'Move to intercept an attack meant for an ally.' },
-      3: { id: 'watchful_guardian', name: 'Watchful Guardian', type: 'passive', description: 'Gain bonus dodge when protecting allies.' },
+      2: { id: 'divine_reflex', name: 'Divine Reflex', type: 'active', description: 'React with holy speed to avoid an incoming attack.' },
+      3: { id: 'watchful_guardian', name: 'Watchful Guardian', type: 'passive', description: 'Gain bonus dodge chance from divine awareness.' },
       4: { id: 'divine_dodge', name: 'Divine Dodge', type: 'active', description: 'An enhanced Evade guided by divine providence.' },
       5: { id: 'ever_vigilant', name: 'Ever Vigilant', type: 'passive', description: 'Cannot be caught off-guard; always act first in combat.' },
-      6: { id: 'guardian_angel', name: 'Guardian Angel', type: 'active', description: 'Summon a divine protector that shields all allies for 3 turns.' }
+      6: { id: 'guardian_angel', name: 'Guardian Angel', type: 'active', description: 'Summon a divine protector that shields you for 3 turns.' }
     }
   }
 };
@@ -256,7 +256,7 @@ const hunterSkillTree = {
       3: { id: 'natural_armor', name: 'Natural Armor', type: 'passive', description: 'Gain bonus armor when not wearing heavy armor.' },
       4: { id: 'resilient_guard', name: 'Resilient Guard', type: 'active', description: 'An enhanced Guard that also heals over time.' },
       5: { id: 'unstoppable', name: 'Unstoppable', type: 'passive', description: 'Reduce the duration of movement-impairing effects.' },
-      6: { id: 'stampede', name: 'Stampede', type: 'active', description: 'Charge through enemies, dealing damage and knocking them down.' }
+      6: { id: 'stampede', name: 'Stampede', type: 'active', description: 'Charge into the enemy with unstoppable force, dealing massive damage.' }
     }
   },
   brilliance: {
@@ -264,23 +264,23 @@ const hunterSkillTree = {
     description: 'Tap into ancient beast magic and primal wisdom.',
     stages: {
       1: { ...BASIC_ABILITIES.brilliance },
-      2: { id: 'beast_tongue', name: 'Beast Tongue', type: 'active', description: 'Communicate with animals to gather information.' },
+      2: { id: 'beast_tongue', name: 'Beast Tongue', type: 'active', description: 'Commune with nature spirits to reveal enemy weaknesses.' },
       3: { id: 'natural_wisdom', name: 'Natural Wisdom', type: 'passive', description: 'Increase mana regeneration while outdoors.' },
       4: { id: 'primal_spark', name: 'Primal Spark', type: 'active', description: 'An enhanced Spark infused with nature magic.' },
-      5: { id: 'beast_bond', name: 'Beast Bond', type: 'passive', description: 'Gain the abilities of nearby friendly beasts.' },
-      6: { id: 'call_of_the_wild', name: 'Call of the Wild', type: 'active', description: 'Summon a pack of spirit animals to aid you in battle.' }
+      5: { id: 'beast_bond', name: 'Beast Bond', type: 'passive', description: 'Channel the spirit of beasts to enhance your abilities.' },
+      6: { id: 'call_of_the_wild', name: 'Call of the Wild', type: 'active', description: 'Summon a powerful spirit beast to attack the enemy.' }
     }
   },
   spirit: {
     pathName: 'Path of the Wolf',
-    description: 'Develop pack instincts and spiritual connection.',
+    description: 'Develop primal instincts and spiritual connection.',
     stages: {
       1: { ...BASIC_ABILITIES.spirit },
-      2: { id: 'pack_tactics', name: 'Pack Tactics', type: 'active', description: 'Coordinate with allies for bonus damage.' },
-      3: { id: 'spirit_bond', name: 'Spirit Bond', type: 'passive', description: 'Increase Spirit when fighting alongside allies.' },
-      4: { id: 'howling_fortify', name: 'Howling Fortify', type: 'active', description: 'An enhanced Fortify that also buffs nearby allies.' },
-      5: { id: 'alpha_presence', name: 'Alpha Presence', type: 'passive', description: 'Allies gain bonus stats when near you.' },
-      6: { id: 'spirit_pack', name: 'Spirit Pack', type: 'active', description: 'Summon spirit wolves that fight alongside you for 3 turns.' }
+      2: { id: 'lone_wolf', name: 'Lone Wolf', type: 'active', description: 'Embrace your independence for bonus damage and defense.' },
+      3: { id: 'spirit_bond', name: 'Spirit Bond', type: 'passive', description: 'Your connection to nature increases your Spirit.' },
+      4: { id: 'howling_fortify', name: 'Howling Fortify', type: 'active', description: 'An enhanced Fortify that intimidates the enemy.' },
+      5: { id: 'alpha_presence', name: 'Alpha Presence', type: 'passive', description: 'Your presence weakens the enemy\'s resolve.' },
+      6: { id: 'spirit_wolf', name: 'Spirit Wolf', type: 'active', description: 'Summon a spirit wolf that fights alongside you for 3 turns.' }
     }
   },
   acuity: {
@@ -304,7 +304,7 @@ const hunterSkillTree = {
       3: { id: 'predator_reflexes', name: 'Predator Reflexes', type: 'passive', description: 'Increase dodge chance against ranged attacks.' },
       4: { id: 'swift_evade', name: 'Swift Evade', type: 'active', description: 'An enhanced Evade that also repositions you.' },
       5: { id: 'hunters_mark', name: "Hunter's Mark", type: 'passive', description: 'Track marked prey, preventing them from escaping.' },
-      6: { id: 'death_from_above', name: 'Death from Above', type: 'active', description: 'Leap into the air and rain arrows on all enemies below.' }
+      6: { id: 'death_from_above', name: 'Death from Above', type: 'active', description: 'Leap into the air and rain arrows on the enemy below.' }
     }
   }
 };
@@ -339,14 +339,14 @@ const rogueSkillTree = {
   },
   brilliance: {
     pathName: 'Path of the Trickster',
-    description: 'Use illusions and misdirection to confuse enemies.',
+    description: 'Use illusions and misdirection to confuse the enemy.',
     stages: {
       1: { ...BASIC_ABILITIES.brilliance },
-      2: { id: 'decoy', name: 'Decoy', type: 'active', description: 'Create an illusory copy of yourself to distract enemies.' },
+      2: { id: 'decoy', name: 'Decoy', type: 'active', description: 'Create an illusory copy of yourself to distract the enemy.' },
       3: { id: 'cunning', name: 'Cunning', type: 'passive', description: 'Increase spell effectiveness based on Instinct.' },
       4: { id: 'confusing_spark', name: 'Confusing Spark', type: 'active', description: 'An enhanced Spark that can confuse the target.' },
       5: { id: 'mirror_images', name: 'Mirror Images', type: 'passive', description: 'Attacks against you have a chance to hit an illusion instead.' },
-      6: { id: 'mass_hysteria', name: 'Mass Hysteria', type: 'active', description: 'Cause all enemies to attack each other for 2 turns.' }
+      6: { id: 'mass_hysteria', name: 'Mass Hysteria', type: 'active', description: 'Drive the enemy into a confused frenzy, causing them to hurt themselves for 2 turns.' }
     }
   },
   spirit: {
@@ -369,8 +369,8 @@ const rogueSkillTree = {
       2: { id: 'poisoned_blade', name: 'Poisoned Blade', type: 'active', description: 'Coat your weapon with poison that damages over time.' },
       3: { id: 'vital_strike', name: 'Vital Strike', type: 'passive', description: 'Critical hits have a chance to apply additional effects.' },
       4: { id: 'pinpoint_focus', name: 'Pinpoint Focus', type: 'active', description: 'An enhanced Focus that reveals enemy weak points.' },
-      5: { id: 'neurotoxin', name: 'Neurotoxin', type: 'passive', description: 'Your poisons can paralyze enemies.' },
-      6: { id: 'death_lotus', name: 'Death Lotus', type: 'active', description: 'Spin rapidly, applying deadly poison to all nearby enemies.' }
+      5: { id: 'neurotoxin', name: 'Neurotoxin', type: 'passive', description: 'Your poisons can paralyze the enemy.' },
+      6: { id: 'death_lotus', name: 'Death Lotus', type: 'active', description: 'Spin rapidly, striking multiple times and applying deadly poison.' }
     }
   },
   instinct: {
@@ -400,7 +400,7 @@ const mageSkillTree = {
       3: { id: 'elemental_fury', name: 'Elemental Fury', type: 'passive', description: 'Increase damage of elemental spells.' },
       4: { id: 'empowered_strike', name: 'Empowered Strike', type: 'active', description: 'An enhanced Strike infused with magical energy.' },
       5: { id: 'chain_reaction', name: 'Chain Reaction', type: 'passive', description: 'Spell kills can trigger explosions.' },
-      6: { id: 'meteor_storm', name: 'Meteor Storm', type: 'active', description: 'Call down meteors to devastate all enemies.' }
+      6: { id: 'meteor_storm', name: 'Meteor Storm', type: 'active', description: 'Call down a devastating meteor strike on the enemy.' }
     }
   },
   toughness: {
@@ -483,50 +483,50 @@ const priestSkillTree = {
   },
   toughness: {
     pathName: 'Path of the Martyr',
-    description: 'Sacrifice yourself to protect others.',
+    description: 'Endure pain through divine fortitude.',
     stages: {
       1: { ...BASIC_ABILITIES.toughness },
       2: { id: 'pain_suppression', name: 'Pain Suppression', type: 'active', description: 'Reduce damage taken significantly for a short time.' },
       3: { id: 'endurance', name: 'Endurance', type: 'passive', description: 'Increase maximum HP.' },
-      4: { id: 'martyrs_guard', name: "Martyr's Guard", type: 'active', description: 'An enhanced Guard that transfers damage to yourself from allies.' },
+      4: { id: 'martyrs_guard', name: "Martyr's Guard", type: 'active', description: 'An enhanced Guard that converts damage taken into healing.' },
       5: { id: 'undying_faith', name: 'Undying Faith', type: 'passive', description: 'Survive lethal damage once per battle.' },
-      6: { id: 'sacrifice', name: 'Sacrifice', type: 'active', description: 'Give your life to fully heal and resurrect all allies.' }
+      6: { id: 'divine_renewal', name: 'Divine Renewal', type: 'active', description: 'Channel divine power to fully restore your HP and cleanse all debuffs.' }
     }
   },
   brilliance: {
     pathName: 'Path of the Healer',
-    description: 'Master the divine arts of restoration.',
+    description: 'Master the divine arts of self-restoration.',
     stages: {
       1: { ...BASIC_ABILITIES.brilliance },
-      2: { id: 'heal', name: 'Heal', type: 'active', description: 'Restore HP to yourself or an ally.' },
+      2: { id: 'heal', name: 'Heal', type: 'active', description: 'Restore a significant amount of your HP.' },
       3: { id: 'improved_healing', name: 'Improved Healing', type: 'passive', description: 'Increase healing spell effectiveness.' },
-      4: { id: 'greater_spark', name: 'Greater Spark', type: 'active', description: 'An enhanced Spark that can also heal allies.' },
+      4: { id: 'greater_spark', name: 'Greater Spark', type: 'active', description: 'An enhanced Spark that also heals you for damage dealt.' },
       5: { id: 'healing_mastery', name: 'Healing Mastery', type: 'passive', description: 'Healing spells can critically heal.' },
-      6: { id: 'divine_hymn', name: 'Divine Hymn', type: 'active', description: 'Sing a hymn that fully heals all allies over 3 turns.' }
+      6: { id: 'divine_hymn', name: 'Divine Hymn', type: 'active', description: 'Sing a hymn that fully heals you over 3 turns.' }
     }
   },
   spirit: {
     pathName: 'Path of the Blessed',
-    description: 'Channel divine blessings to empower allies.',
+    description: 'Channel divine blessings to empower yourself.',
     stages: {
       1: { ...BASIC_ABILITIES.spirit },
-      2: { id: 'blessing', name: 'Blessing', type: 'active', description: 'Grant an ally a temporary stat bonus.' },
+      2: { id: 'blessing', name: 'Blessing', type: 'active', description: 'Grant yourself a temporary stat bonus.' },
       3: { id: 'divine_favor', name: 'Divine Favor', type: 'passive', description: 'Increase the effectiveness of your buffs.' },
-      4: { id: 'mass_fortify', name: 'Mass Fortify', type: 'active', description: 'An enhanced Fortify that affects all allies.' },
-      5: { id: 'aura_of_grace', name: 'Aura of Grace', type: 'passive', description: 'Allies near you regenerate HP slowly.' },
-      6: { id: 'power_word_shield', name: 'Power Word: Shield', type: 'active', description: 'Create an impenetrable shield around all allies for 1 turn.' }
+      4: { id: 'greater_fortify', name: 'Greater Fortify', type: 'active', description: 'An enhanced Fortify with increased duration and power.' },
+      5: { id: 'aura_of_grace', name: 'Aura of Grace', type: 'passive', description: 'Passively regenerate HP slowly over time.' },
+      6: { id: 'power_word_shield', name: 'Power Word: Shield', type: 'active', description: 'Create an impenetrable divine shield around yourself for 1 turn.' }
     }
   },
   acuity: {
     pathName: 'Path of the Mender',
-    description: 'Precisely target healing where it is needed most.',
+    description: 'Precisely time healing for maximum effect.',
     stages: {
       1: { ...BASIC_ABILITIES.acuity },
-      2: { id: 'targeted_heal', name: 'Targeted Heal', type: 'active', description: 'A precise heal that restores more HP to wounded targets.' },
+      2: { id: 'targeted_heal', name: 'Targeted Heal', type: 'active', description: 'A precise heal that restores more HP when you are wounded.' },
       3: { id: 'efficient_casting', name: 'Efficient Casting', type: 'passive', description: 'Reduce mana cost of healing spells.' },
-      4: { id: 'surgical_focus', name: 'Surgical Focus', type: 'active', description: 'An enhanced Focus that improves next heal effectiveness.' },
-      5: { id: 'triage', name: 'Triage', type: 'passive', description: 'Automatically heal the most wounded ally each turn.' },
-      6: { id: 'miracle', name: 'Miracle', type: 'active', description: 'Instantly restore an ally to full HP and remove all debuffs.' }
+      4: { id: 'surgical_focus', name: 'Surgical Focus', type: 'active', description: 'An enhanced Focus that improves your next heal effectiveness.' },
+      5: { id: 'emergency_healing', name: 'Emergency Healing', type: 'passive', description: 'Automatically heal yourself when HP drops below 25%.' },
+      6: { id: 'miracle', name: 'Miracle', type: 'active', description: 'Instantly restore yourself to full HP and remove all debuffs.' }
     }
   },
   instinct: {
@@ -549,26 +549,26 @@ const priestSkillTree = {
 const bardSkillTree = {
   power: {
     pathName: 'Path of the Warcry',
-    description: 'Inspire allies to feats of martial prowess.',
+    description: 'Empower yourself with songs of martial prowess.',
     stages: {
       1: { ...BASIC_ABILITIES.power },
-      2: { id: 'inspiring_strike', name: 'Inspiring Strike', type: 'active', description: 'An attack that also inspires nearby allies.' },
-      3: { id: 'battle_anthem', name: 'Battle Anthem', type: 'passive', description: 'Allies gain bonus Power while you are singing.' },
+      2: { id: 'inspiring_strike', name: 'Inspiring Strike', type: 'active', description: 'An attack that also empowers your next action.' },
+      3: { id: 'battle_anthem', name: 'Battle Anthem', type: 'passive', description: 'Gain bonus Power while you are singing.' },
       4: { id: 'thunderous_strike', name: 'Thunderous Strike', type: 'active', description: 'An enhanced Strike that echoes with sonic force.' },
-      5: { id: 'epic_inspiration', name: 'Epic Inspiration', type: 'passive', description: 'Your inspiring songs last longer.' },
-      6: { id: 'song_of_war', name: 'Song of War', type: 'active', description: 'Sing an epic war song that doubles ally damage for 3 turns.' }
+      5: { id: 'epic_inspiration', name: 'Epic Inspiration', type: 'passive', description: 'Your empowering songs last longer.' },
+      6: { id: 'song_of_war', name: 'Song of War', type: 'active', description: 'Sing an epic war song that doubles your damage for 3 turns.' }
     }
   },
   toughness: {
     pathName: 'Path of the Shield Song',
-    description: 'Protect allies with defensive melodies.',
+    description: 'Protect yourself with defensive melodies.',
     stages: {
       1: { ...BASIC_ABILITIES.toughness },
-      2: { id: 'defensive_verse', name: 'Defensive Verse', type: 'active', description: 'Sing a verse that reduces damage taken by allies.' },
+      2: { id: 'defensive_verse', name: 'Defensive Verse', type: 'active', description: 'Sing a verse that reduces damage you take.' },
       3: { id: 'harmonious_defense', name: 'Harmonious Defense', type: 'passive', description: 'Increase your defense while singing.' },
       4: { id: 'resonant_guard', name: 'Resonant Guard', type: 'active', description: 'An enhanced Guard that creates a sonic barrier.' },
       5: { id: 'lasting_protection', name: 'Lasting Protection', type: 'passive', description: 'Defensive songs persist even after you stop singing.' },
-      6: { id: 'fortress_ballad', name: 'Fortress Ballad', type: 'active', description: 'Sing a ballad that makes all allies immune to physical damage for 1 turn.' }
+      6: { id: 'fortress_ballad', name: 'Fortress Ballad', type: 'active', description: 'Sing a ballad that makes you immune to physical damage for 1 turn.' }
     }
   },
   brilliance: {
@@ -576,35 +576,35 @@ const bardSkillTree = {
     description: 'Weave enchanting magic through song.',
     stages: {
       1: { ...BASIC_ABILITIES.brilliance },
-      2: { id: 'dissonant_whispers', name: 'Dissonant Whispers', type: 'active', description: 'Whisper maddening words that damage and confuse.' },
+      2: { id: 'dissonant_whispers', name: 'Dissonant Whispers', type: 'active', description: 'Whisper maddening words that damage and confuse the enemy.' },
       3: { id: 'magical_melody', name: 'Magical Melody', type: 'passive', description: 'Increase magical damage from songs.' },
       4: { id: 'piercing_note', name: 'Piercing Note', type: 'active', description: 'An enhanced Spark that ignores magical resistance.' },
-      5: { id: 'enchanting_voice', name: 'Enchanting Voice', type: 'passive', description: 'Your songs can charm enemies.' },
-      6: { id: 'sirens_call', name: "Siren's Call", type: 'active', description: 'Sing an irresistible song that charms all enemies for 2 turns.' }
+      5: { id: 'enchanting_voice', name: 'Enchanting Voice', type: 'passive', description: 'Your songs can charm the enemy.' },
+      6: { id: 'sirens_call', name: "Siren's Call", type: 'active', description: 'Sing an irresistible song that charms the enemy for 2 turns.' }
     }
   },
   spirit: {
     pathName: 'Path of the Muse',
-    description: 'Channel the divine muse to restore and inspire.',
+    description: 'Channel the divine muse to restore your strength.',
     stages: {
       1: { ...BASIC_ABILITIES.spirit },
-      2: { id: 'song_of_rest', name: 'Song of Rest', type: 'active', description: 'Sing a soothing song that heals all allies.' },
-      3: { id: 'rejuvenating_melody', name: 'Rejuvenating Melody', type: 'passive', description: 'Your songs slowly restore ally HP over time.' },
-      4: { id: 'empowering_fortify', name: 'Empowering Fortify', type: 'active', description: 'An enhanced Fortify that also boosts ally stats.' },
-      5: { id: 'muse_blessing', name: "Muse's Blessing", type: 'passive', description: 'Allies affected by your songs gain mana regeneration.' },
-      6: { id: 'symphony_of_souls', name: 'Symphony of Souls', type: 'active', description: 'Play a masterpiece that fully restores all ally HP and MP.' }
+      2: { id: 'song_of_rest', name: 'Song of Rest', type: 'active', description: 'Sing a soothing song that heals you.' },
+      3: { id: 'rejuvenating_melody', name: 'Rejuvenating Melody', type: 'passive', description: 'Your songs slowly restore your HP over time.' },
+      4: { id: 'empowering_fortify', name: 'Empowering Fortify', type: 'active', description: 'An enhanced Fortify that also boosts your stats.' },
+      5: { id: 'muse_blessing', name: "Muse's Blessing", type: 'passive', description: 'Your songs grant you mana regeneration.' },
+      6: { id: 'symphony_of_souls', name: 'Symphony of Souls', type: 'active', description: 'Play a masterpiece that fully restores your HP and MP.' }
     }
   },
   acuity: {
     pathName: 'Path of Mockery',
-    description: 'Use cutting words to demoralize enemies.',
+    description: 'Use cutting words to demoralize the enemy.',
     stages: {
       1: { ...BASIC_ABILITIES.acuity },
-      2: { id: 'vicious_mockery', name: 'Vicious Mockery', type: 'active', description: 'Hurl insults that damage and weaken an enemy.' },
+      2: { id: 'vicious_mockery', name: 'Vicious Mockery', type: 'active', description: 'Hurl insults that damage and weaken the enemy.' },
       3: { id: 'cutting_words', name: 'Cutting Words', type: 'passive', description: 'Your insults reduce enemy accuracy.' },
-      4: { id: 'distracting_focus', name: 'Distracting Focus', type: 'active', description: 'An enhanced Focus that also distracts enemies.' },
-      5: { id: 'demoralizing_presence', name: 'Demoralizing Presence', type: 'passive', description: 'Enemies near you have reduced stats.' },
-      6: { id: 'song_of_despair', name: 'Song of Despair', type: 'active', description: 'Sing a depressing song that causes all enemies to skip their next turn.' }
+      4: { id: 'distracting_focus', name: 'Distracting Focus', type: 'active', description: 'An enhanced Focus that also distracts the enemy.' },
+      5: { id: 'demoralizing_presence', name: 'Demoralizing Presence', type: 'passive', description: 'Your presence weakens the enemy\'s stats.' },
+      6: { id: 'song_of_despair', name: 'Song of Despair', type: 'active', description: 'Sing a depressing song that causes the enemy to skip their next turn.' }
     }
   },
   instinct: {
@@ -633,8 +633,8 @@ const druidSkillTree = {
       2: { id: 'flame_strike', name: 'Flame Strike', type: 'active', description: 'Call down primal fire on an enemy.' },
       3: { id: 'burning_wrath', name: 'Burning Wrath', type: 'passive', description: 'Fire spells leave burning effects.' },
       4: { id: 'primal_strike', name: 'Primal Strike', type: 'active', description: 'An enhanced Strike infused with natural energy.' },
-      5: { id: 'spreading_flames', name: 'Spreading Flames', type: 'passive', description: 'Burning effects can spread to nearby enemies.' },
-      6: { id: 'wildfire', name: 'Wildfire', type: 'active', description: 'Unleash an uncontrollable fire that burns all enemies.' }
+      5: { id: 'spreading_flames', name: 'Spreading Flames', type: 'passive', description: 'Burning effects intensify over time.' },
+      6: { id: 'wildfire', name: 'Wildfire', type: 'active', description: 'Unleash an uncontrollable fire that devastates the enemy.' }
     }
   },
   toughness: {
@@ -658,7 +658,7 @@ const druidSkillTree = {
       3: { id: 'lunar_affinity', name: 'Lunar Affinity', type: 'passive', description: 'Increase spell power at night.' },
       4: { id: 'celestial_spark', name: 'Celestial Spark', type: 'active', description: 'An enhanced Spark infused with starlight.' },
       5: { id: 'solar_empowerment', name: 'Solar Empowerment', type: 'passive', description: 'Increase spell power during the day.' },
-      6: { id: 'eclipse', name: 'Eclipse', type: 'active', description: 'Align sun and moon to devastate all enemies with cosmic power.' }
+      6: { id: 'eclipse', name: 'Eclipse', type: 'active', description: 'Align sun and moon to devastate the enemy with cosmic power.' }
     }
   },
   spirit: {
@@ -666,11 +666,11 @@ const druidSkillTree = {
     description: 'Command the cycle of life and decay.',
     stages: {
       1: { ...BASIC_ABILITIES.spirit },
-      2: { id: 'rejuvenation', name: 'Rejuvenation', type: 'active', description: 'Heal an ally over time with natural magic.' },
+      2: { id: 'rejuvenation', name: 'Rejuvenation', type: 'active', description: 'Heal yourself over time with natural magic.' },
       3: { id: 'nature_blessing', name: "Nature's Blessing", type: 'passive', description: 'Increase healing spell effectiveness.' },
       4: { id: 'living_fortify', name: 'Living Fortify', type: 'active', description: 'An enhanced Fortify that also heals.' },
-      5: { id: 'cycle_of_life', name: 'Cycle of Life', type: 'passive', description: 'When enemies die nearby, heal yourself.' },
-      6: { id: 'tree_of_life', name: 'Tree of Life', type: 'active', description: 'Transform into a tree of life, massively healing all allies each turn.' }
+      5: { id: 'cycle_of_life', name: 'Cycle of Life', type: 'passive', description: 'When the enemy dies, heal yourself.' },
+      6: { id: 'tree_of_life', name: 'Tree of Life', type: 'active', description: 'Transform into a tree of life, massively healing yourself each turn.' }
     }
   },
   acuity: {
@@ -681,8 +681,8 @@ const druidSkillTree = {
       2: { id: 'thorn_whip', name: 'Thorn Whip', type: 'active', description: 'Lash an enemy with thorny vines.' },
       3: { id: 'natural_precision', name: 'Natural Precision', type: 'passive', description: 'Increase accuracy with nature spells.' },
       4: { id: 'piercing_focus', name: 'Piercing Focus', type: 'active', description: 'An enhanced Focus that targets enemy weaknesses.' },
-      5: { id: 'entangling_thorns', name: 'Entangling Thorns', type: 'passive', description: 'Your thorn attacks can root enemies.' },
-      6: { id: 'wall_of_thorns', name: 'Wall of Thorns', type: 'active', description: 'Create a massive wall of thorns that damages and traps all enemies.' }
+      5: { id: 'entangling_thorns', name: 'Entangling Thorns', type: 'passive', description: 'Your thorn attacks can root the enemy in place.' },
+      6: { id: 'wall_of_thorns', name: 'Wall of Thorns', type: 'active', description: 'Create a massive wall of thorns that damages and traps the enemy.' }
     }
   },
   instinct: {
