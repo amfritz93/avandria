@@ -410,7 +410,9 @@ const startCombat = async (req, res, next) => {
       hero: {
         currentHP: hero.currentHP,
         currentMP: hero.currentMP,
-        currentStamina: hero.currentStamina || 100
+        currentStamina: hero.currentStamina || 100,
+        buffs: [],      // Active buffs (Focus crit bonus, Evade dodge bonus)
+        debuffs: []     // Active debuffs (for Fortify to cleanse)
       },
       round: 0,
       log: [],
@@ -521,38 +523,94 @@ const heroAttack = async (req, res, next) => {
       combat.hero.currentStamina -= ability.staminaCost;
     }
 
+    // Initialize buffs array if not present
+    if (!combat.hero.buffs) combat.hero.buffs = [];
+    if (!combat.hero.debuffs) combat.hero.debuffs = [];
+
     // Determine damage type and multipliers based on ability or basic attack
-    let heroDamageType = ability?.damageType || 'slashing';
+    let heroDamageType = ability?.damageType || 'physical';
     let abilityDamageMultiplier = ability?.damageMultiplier || 1.0;
     let hitModifier = ability?.hitModifier || 0;
     let critModifier = ability?.critModifier || 0;
-    let isDefending = false;
-    let dodgeChance = 0;
+    let skipHeroAttack = false;
+
+    // Check for active Focus buff (crit bonus) and apply it
+    const focusBuffIndex = combat.hero.buffs.findIndex(b => b.type === 'critBonus');
+    if (focusBuffIndex !== -1) {
+      critModifier += combat.hero.buffs[focusBuffIndex].value;
+      combat.hero.buffs.splice(focusBuffIndex, 1); // Consume the buff
+      roundLog.push({
+        type: 'buff_consumed',
+        message: 'Focus bonus applied to this attack!'
+      });
+    }
 
     // Handle special ability effects
     if (ability) {
       if (ability.effect === 'defend') {
-        isDefending = true;
-        combat.hero.isDefending = true;
+        // Guard: Reduce incoming damage by 25% this turn
+        combat.hero.buffs.push({
+          type: 'damageReduction',
+          value: ability.damageReduction || 0.25,
+          duration: 1,
+          source: ability.name
+        });
+        skipHeroAttack = true;
         roundLog.push({
           type: 'hero_defend',
           ability: ability.name,
-          message: `You take a defensive stance with ${ability.name}!`
+          message: `You take a defensive stance with ${ability.name}! Incoming damage reduced by 25%.`
         });
-      } else if (ability.effect === 'heal') {
-        const healAmount = Math.floor(heroStats[ability.statUsed] * ability.healMultiplier);
-        const maxHP = hero.maxHP;
-        const actualHeal = Math.min(healAmount, maxHP - combat.hero.currentHP);
-        combat.hero.currentHP = Math.min(maxHP, combat.hero.currentHP + actualHeal);
-        roundLog.push({
-          type: 'hero_heal',
-          ability: ability.name,
-          heal: actualHeal,
-          message: `You use ${ability.name} and restore ${actualHeal} HP!`,
-          heroHP: combat.hero.currentHP
-        });
-      } else if (ability.effect === 'counter') {
-        dodgeChance = ability.dodgeChance || 0;
+      } else if (ability.effect === 'cleanse') {
+        // Fortify: Remove one debuff
+        skipHeroAttack = true;
+        if (combat.hero.debuffs.length > 0) {
+          const cleansedDebuff = combat.hero.debuffs.shift();
+          roundLog.push({
+            type: 'hero_cleanse',
+            ability: ability.name,
+            cleansed: cleansedDebuff.type,
+            message: `You use ${ability.name} and remove ${cleansedDebuff.type}!`
+          });
+        } else {
+          roundLog.push({
+            type: 'hero_cleanse',
+            ability: ability.name,
+            message: `You use ${ability.name}, but have no debuffs to remove.`
+          });
+        }
+      } else if (ability.effect === 'buff') {
+        // Focus or Evade: Apply buff for next action
+        skipHeroAttack = true;
+        if (ability.buffType === 'critBonus') {
+          // Focus: +15% crit on next attack
+          combat.hero.buffs.push({
+            type: 'critBonus',
+            value: ability.critBonus || 15,
+            duration: 1,
+            source: ability.name
+          });
+          roundLog.push({
+            type: 'hero_buff',
+            ability: ability.name,
+            buffType: 'critBonus',
+            message: `You focus intently. Your next attack has +${ability.critBonus || 15}% Critical Hit Chance!`
+          });
+        } else if (ability.buffType === 'dodgeBonus') {
+          // Evade: +25% dodge on next incoming attack
+          combat.hero.buffs.push({
+            type: 'dodgeBonus',
+            value: ability.dodgeBonus || 25,
+            duration: 1,
+            source: ability.name
+          });
+          roundLog.push({
+            type: 'hero_buff',
+            ability: ability.name,
+            buffType: 'dodgeBonus',
+            message: `You prepare to evade. +${ability.dodgeBonus || 25}% chance to dodge the next attack!`
+          });
+        }
       }
     }
 
@@ -568,11 +626,11 @@ const heroAttack = async (req, res, next) => {
 
     const totalDamageMultiplier = abilityDamageMultiplier * weaknessMultiplier;
 
-    // Hero attack (if ability deals damage)
+    // Hero attack (if ability deals damage and not a buff/defensive action)
     let heroDamage = 0;
     let heroCrit = false;
 
-    if (!ability || ability.effect === 'damage' || ability.effect === 'counter') {
+    if (!skipHeroAttack && (!ability || ability.effect === 'damage')) {
       // Calculate hit chance with modifiers
       const modifiedHeroStats = {
         ...heroStats,
@@ -731,14 +789,24 @@ const heroAttack = async (req, res, next) => {
     let monsterCrit = false;
     let monsterHits = false;
 
-    // Check for dodge (from Evade ability)
+    // Check for Evade dodge bonus buff
+    let dodgeBonus = 0;
+    const dodgeBuffIndex = combat.hero.buffs.findIndex(b => b.type === 'dodgeBonus');
+    if (dodgeBuffIndex !== -1) {
+      dodgeBonus = combat.hero.buffs[dodgeBuffIndex].value;
+      combat.hero.buffs.splice(dodgeBuffIndex, 1); // Consume the buff
+    }
+
+    // Roll for dodge (base chance from Instinct + Evade bonus)
+    const baseDodgeChance = heroStats.instinct; // Base dodge from Instinct
+    const totalDodgeChance = Math.min(75, baseDodgeChance + dodgeBonus); // Cap at 75%
     const dodgeRoll = Math.random() * 100;
-    const heroDodged = dodgeChance > 0 && dodgeRoll < dodgeChance;
+    const heroDodged = dodgeBonus > 0 && dodgeRoll < totalDodgeChance;
 
     if (heroDodged) {
       roundLog.push({
         type: 'hero_dodge',
-        message: `You dodge ${combat.monster.name}'s attack!`,
+        message: `You evade ${combat.monster.name}'s attack!`,
         heroHP: combat.hero.currentHP
       });
     } else {
@@ -748,10 +816,14 @@ const heroAttack = async (req, res, next) => {
       // (Hero weaknesses would be determined by equipment - for now, neutral)
       let monsterDamageMultiplier = 1.0;
 
-      // Apply defense reduction if hero is defending
-      if (combat.hero.isDefending) {
-        monsterDamageMultiplier *= 0.5; // Take 50% less damage
-        combat.hero.isDefending = false; // Reset after one attack
+      // Check for Guard damage reduction buff
+      const damageReductionIndex = combat.hero.buffs.findIndex(b => b.type === 'damageReduction');
+      let hadGuard = false;
+      if (damageReductionIndex !== -1) {
+        const reductionBuff = combat.hero.buffs[damageReductionIndex];
+        monsterDamageMultiplier *= (1 - reductionBuff.value); // 25% reduction = 0.75 multiplier
+        combat.hero.buffs.splice(damageReductionIndex, 1); // Consume the buff
+        hadGuard = true;
       }
 
       if (monsterHits) {
@@ -762,7 +834,7 @@ const heroAttack = async (req, res, next) => {
         }
         combat.hero.currentHP = Math.max(0, combat.hero.currentHP - monsterDamage);
 
-        const defendText = isDefending ? ' (reduced by Guard)' : '';
+        const defendText = hadGuard ? ' (reduced by Guard)' : '';
         roundLog.push({
           type: 'monster_attack',
           hit: true,

@@ -208,6 +208,19 @@ const CombatTab = ({ monsters, hero, location }) => {
               const canAfford =
                 (ability.mpCost === 0 || combatHeroMP >= ability.mpCost) &&
                 (ability.staminaCost === 0 || combatHeroStamina >= ability.staminaCost);
+              const isFree = ability.mpCost === 0 && ability.staminaCost === 0;
+
+              // Determine button color based on ability effect
+              const getAbilityColor = () => {
+                if (!canAfford) return 'var(--color-bg-tertiary)';
+                switch (ability.effect) {
+                  case 'damage': return 'var(--color-danger)';
+                  case 'defend': return 'var(--color-success)';
+                  case 'buff': return 'var(--color-info)';
+                  case 'cleanse': return 'var(--color-xp)';
+                  default: return 'var(--color-accent)';
+                }
+              };
 
               return (
                 <button
@@ -216,15 +229,21 @@ const CombatTab = ({ monsters, hero, location }) => {
                   disabled={isAttacking || isFleeing || !canAfford}
                   className="py-2 px-1 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
                   style={{
-                    backgroundColor: canAfford ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
+                    backgroundColor: getAbilityColor(),
                     color: canAfford ? 'white' : 'var(--color-text-muted)'
                   }}
-                  title={`${ability.description}\n${ability.mpCost > 0 ? `MP: ${ability.mpCost}` : ''}${ability.staminaCost > 0 ? `Stamina: ${ability.staminaCost}` : ''}`}
+                  title={ability.description}
                 >
                   <div>{ability.name}</div>
                   <div className="text-[10px] opacity-75">
-                    {ability.mpCost > 0 && <span style={{ color: 'var(--color-mp)' }}>{ability.mpCost} MP</span>}
-                    {ability.staminaCost > 0 && <span style={{ color: 'var(--color-stamina)' }}>{ability.staminaCost} ST</span>}
+                    {isFree ? (
+                      <span>Free</span>
+                    ) : (
+                      <>
+                        {ability.mpCost > 0 && <span>{ability.mpCost} MP</span>}
+                        {ability.staminaCost > 0 && <span>{ability.staminaCost} ST</span>}
+                      </>
+                    )}
                   </div>
                 </button>
               );
@@ -523,6 +542,16 @@ const LogEntry = ({ entry }) => {
         return { color: 'var(--color-warning)' };
       case 'combat_start':
         return { color: 'var(--color-accent)', fontWeight: 'bold' };
+      case 'hero_defend':
+        return { color: 'var(--color-success)' };
+      case 'hero_buff':
+        return { color: 'var(--color-info)' };
+      case 'hero_cleanse':
+        return { color: 'var(--color-xp)' };
+      case 'buff_consumed':
+        return { color: 'var(--color-info)', fontStyle: 'italic' };
+      case 'hero_dodge':
+        return { color: 'var(--color-info)' };
       default:
         return { color: 'var(--color-text-secondary)' };
     }
